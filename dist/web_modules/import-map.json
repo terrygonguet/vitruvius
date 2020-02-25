@@ -1,7 +1,0 @@
-{
-  "imports": {
-    "pixi": "./pixi.js",
-    "ecsy": "./ecsy.js",
-    "sat": "./sat.js"
-  }
-}

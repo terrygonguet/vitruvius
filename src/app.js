@@ -1,7 +1,8 @@
+import { Graphics } from "pixi"
 import { world, app } from "./globals.js"
+
 import Position from "./components/position.js"
 import Sprite from "./components/sprite.js"
-import { Graphics } from "pixi"
 
 import CollisionSystem from "./systems/collisions.js"
 import MovementSystem from "./systems/movement.js"
