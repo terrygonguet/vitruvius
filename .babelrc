@@ -1,0 +1,14 @@
+{
+	"presets": [
+		[
+			"@babel/preset-env",
+			{
+				"modules": false
+			}
+		]
+	],
+	"plugins": [
+		["snowpack/assets/babel-plugin.js", {}],
+		"@babel/plugin-proposal-class-properties"
+	]
+}
