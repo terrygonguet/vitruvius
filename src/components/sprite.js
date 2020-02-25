@@ -1,11 +1,12 @@
 import { Component } from "ecsy"
 
 class Sprite extends Component {
-  graphics = null
+	graphics = null
+	parent = null
 
-  reset() {
-    this.graphics = null
-  }
+	reset() {
+		this.graphics = this.parent = null
+	}
 }
 
 export default Sprite

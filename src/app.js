@@ -1,5 +1,4 @@
-import { Graphics } from "pixi"
-import { world, app } from "./globals.js"
+import { world, app, tetriminos, directions } from "./globals.js"
 
 import Position from "./components/position.js"
 import Sprite from "./components/sprite.js"
@@ -8,6 +7,8 @@ import CollisionSystem from "./systems/collisions.js"
 import MovementSystem from "./systems/movement.js"
 import RenderableSystem from "./systems/renderable.js"
 import TickerSystem from "./systems/ticker.js"
+import makeBoard from "./prefabs/board.js"
+import makeTetrimino from "./prefabs/tetrimino.js"
 
 world
 	.registerSystem(TickerSystem)
@@ -20,15 +21,8 @@ app.loader
 		console.error(err, loader, res)
 	})
 	.on("complete", () => {
-		let g = new Graphics()
-			.beginFill(0xff0000)
-			.lineStyle(1, 0xffffff)
-			.drawCircle(0, 0, 10)
-		const e = world
-			.createEntity()
-			.addComponent(Position, { x: innerWidth / 2, y: innerHeight / 2 })
-			.addComponent(Sprite, { graphics: g })
-
+		window.tetrisBoard = makeBoard("left")
+		makeBoard("right")
 		let prev = performance.now(),
 			now,
 			delta
@@ -43,3 +37,17 @@ app.loader
 		console.log(world, app)
 	})
 	.load()
+
+let curTetrimino = 0,
+	curDirection = 0,
+	e
+document.addEventListener("click", () => {
+	if (e) e.remove()
+	e = makeTetrimino(tetriminos[curTetrimino], directions[curDirection])
+	curDirection++
+	if (curDirection >= directions.length) {
+		curDirection = 0
+		curTetrimino++
+	}
+	if (curTetrimino >= tetriminos.length) curTetrimino = 0
+})
