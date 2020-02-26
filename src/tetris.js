@@ -99,6 +99,17 @@ export function moveTetromino({ direction, position, tetrimino }, delta) {
 	else return false
 }
 
+/**
+ * Returns the contents of the matrix for the line
+ * @param {number} y The coordinate of the row to query
+ */
+export function queryLine(y) {
+	let temps = Array(width)
+		.fill(0)
+		.map((_, x) => new Position(x, y))
+	return queryMatrix(temps)
+}
+
 export class Tetrimino {
 	static O = new Tetrimino("O")
 	static I = new Tetrimino("I")

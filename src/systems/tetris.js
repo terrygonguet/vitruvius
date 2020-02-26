@@ -3,7 +3,7 @@ import Tetromino from "../components/tetromino.js"
 import Sprite from "../components/sprite.js"
 import Position from "../components/position.js"
 import { TetrisBoard } from "../components/tags.js"
-import { getBoardDimensions } from "../tools.js"
+import { getBoardDimensions, range } from "../tools.js"
 import {
 	queryTetromino,
 	Tetrimino,
@@ -13,6 +13,8 @@ import {
 	width,
 	Color,
 	NextQueue,
+	bufferHeight,
+	queryLine,
 } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
@@ -185,11 +187,30 @@ class TetrisSystem extends System {
 				parent: boardGraphics,
 			}).addComponent(Position, p.scale(cell))
 		})
-		// remove the logic first and the graphics a bit later to prevent flickering
-		e.removeComponent(Tetromino)
-		setTimeout(() => e.remove(), 50)
+		e.remove()
 		this.spawnTimer = 0.2
 		this.canHold = true
+
+		this.clearLines()
+	}
+
+	clearLines() {
+		let { cell } = getBoardDimensions()
+		for (let y = 0; y < bufferHeight; y++) {
+			let query = queryLine(y).filter(e => e && e.id)
+			if (query.length != 10) continue
+			for (const i of range(0, width - 1)) {
+				for (const j of range(y + 1, bufferHeight - 1)) {
+					let e = matrix[j * width + i]
+					matrix[(j - 1) * width + i] = e
+					if (!e) continue
+					let position = e.getMutableComponent(Position)
+					position.y -= cell
+				}
+			}
+			query.forEach(e => e.remove())
+			y-- // the rows moved down
+		}
 	}
 }
 

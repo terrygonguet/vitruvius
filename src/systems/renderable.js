@@ -29,7 +29,7 @@ class RenderableSystem extends System {
 			e => {
 				let pos = e.getComponent(Position)
 				let { graphics, parent } = e.getComponent(Sprite)
-				e.addComponent(DisplayObject, { graphics })
+				e.addComponent(DisplayObject, { graphics, parent })
 				graphics.position.set(pos.x, pos.y)
 				;(parent || stage).addChild(graphics)
 			},
@@ -38,9 +38,10 @@ class RenderableSystem extends System {
 		this.queries.spriteRemoved.results.forEach(
 			/** @param {ecsy.Entity} e */
 			e => {
-				let { graphics, parent } =
-					e.getComponent(Sprite) || e.getRemovedComponent(Sprite)
-				;(parent || stage).removeChild(graphics)
+				let { graphics } =
+					e.getComponent(DisplayObject) ||
+					e.getRemovedComponent(DisplayObject)
+				graphics.destroy({ children: true })
 				e.removeComponent(DisplayObject)
 			},
 		)

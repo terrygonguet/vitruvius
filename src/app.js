@@ -7,6 +7,7 @@ import EventSystem from "./systems/events.js"
 import TetrisSystem from "./systems/tetris.js"
 
 import makeBoard from "./prefabs/board.js"
+import { matrix } from "./tetris.js"
 
 world
 	.registerSystem(EventSystem)
@@ -33,6 +34,12 @@ app.loader
 			requestAnimationFrame(raf)
 		})
 
-		console.log(world, app)
+		console.log(world, app, matrix)
 	})
 	.load()
+
+document.addEventListener("keydown", e => {
+	if (e.key == "p") {
+		world.enabled = !world.enabled
+	}
+})
