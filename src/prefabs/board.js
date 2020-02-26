@@ -11,13 +11,13 @@ import { TetrisBoard, BreakoutBoard } from "../components/tags.js"
  */
 export default function makeBoard(position = "left") {
 	let e = world.createEntity()
-	let xOffset = position == "left" ? 1 : 3
+	let xOffset = (position == "left" ? 1 : 3) * (innerWidth / 4)
 	let { width: w, height: h, cell } = getBoardDimensions()
 	let g = new Graphics()
 
 	// draw the borders
 	g.lineStyle(2, 0xffffff)
-		.drawRect(0, 0, w, h)
+		.drawRect(-1, -1, w + 2, h + 2)
 		.lineStyle(1, 0xffffff, 0.4)
 
 	// inverse Y so (0,0) is bottom left
@@ -32,7 +32,7 @@ export default function makeBoard(position = "left") {
 	}
 
 	e.addComponent(Position, {
-		x: xOffset * (innerWidth / 4) - w / 2,
+		x: xOffset - w / 2,
 		y: innerHeight / 2 + w,
 	})
 	e.addComponent(Sprite, { graphics: g })
