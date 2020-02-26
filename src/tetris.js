@@ -5,7 +5,7 @@ export const width = 10
 export const height = 20
 export const bufferHeight = 40
 
-/** @type {Color[]} */
+/** @type {ecsy.Entity[]} */
 export const matrix = new Array(10 * 40).fill(undefined)
 
 /**
@@ -27,9 +27,7 @@ function isOOB(position) {
  * @param {Position[]} positions the array of matrix positions to query
  */
 export function queryMatrix(positions) {
-	return positions.map(p =>
-		isOOB(p) ? Color.Gray : matrix[p.y * width + p.x],
-	)
+	return positions.map(p => (isOOB(p) ? true : matrix[p.y * width + p.x]))
 }
 
 /**
@@ -47,17 +45,16 @@ export function queryTetromino({ direction, position, tetrimino }) {
 }
 
 /**
- *
+ * Rotates the tetromino if possible
  * @param {Object} tetromino
  * @param {Direction} tetromino.direction
  * @param {Position} tetromino.position
  * @param {Tetrimino} tetromino.tetrimino
  * @param {"clockwise" | "counterClockwise"} rotation
  */
-export function rotateTetromino(
-	{ direction, position, tetrimino },
-	rotation = "clockwise",
-) {
+export function rotateTetromino(tetromino, rotation = "clockwise") {
+	let { direction, position, tetrimino } = tetromino
+
 	// no-op
 	if (tetrimino == Tetrimino.O) return arguments[0]
 
@@ -78,10 +75,31 @@ export function rotateTetromino(
 			position: nextPos,
 			tetrimino,
 		}
-		if (queryTetromino(nextTetromino).filter(Boolean).length == 0) break
+		if (queryTetromino(nextTetromino).filter(Boolean).length == 0)
+			return nextTetromino
 	}
 
-	return nextTetromino
+	return tetromino
+}
+
+/**
+ * Moves the tetromino if possible, throws otherwise
+ * @param {Object} tetromino
+ * @param {Direction} tetromino.direction
+ * @param {Position} tetromino.position
+ * @param {Tetrimino} tetromino.tetrimino
+ * @param {Position} delta
+ */
+export function moveTetromino({ direction, position, tetrimino }, delta) {
+	let nextPos = position.clone().add(delta)
+	let nextTetromino = {
+		direction,
+		tetrimino,
+		position: nextPos,
+	}
+	if (queryTetromino(nextTetromino).filter(Boolean).length == 0)
+		return nextTetromino
+	else throw new Error("Space is not empty")
 }
 
 export class Tetrimino {

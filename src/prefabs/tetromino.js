@@ -9,7 +9,7 @@ import Tetromino from "../components/tetromino.js"
  * @param {Tetrimino} tetrimino
  * @param {Direction} direction
  */
-export default function makeTetromino(tetrimino, direction) {
+export default function makeTetromino(tetrimino, direction = Direction.North) {
 	let e = world.createEntity()
 	let graphics = new Container()
 	let shape = tetrimino.shape.get(direction)
