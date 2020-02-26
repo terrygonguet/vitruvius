@@ -39,7 +39,7 @@ app.loader
 	.load()
 
 document.addEventListener("keydown", e => {
-	if (e.key == "p") {
+	if (e.key == "Escape" || e.key == "F1") {
 		world.enabled = !world.enabled
 	}
 })

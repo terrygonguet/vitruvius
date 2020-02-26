@@ -35,7 +35,20 @@ class TetrisSystem extends System {
 		this.fallSpeed = 1
 		this.time = 0
 		this.spawnTimer = 0.5
+		this.queue = new NextQueue()
+		this.held = this.queue.next()
+		this.canHold = true
+		this.autorepeat = Infinity
 		this.keys = {
+			rotateCW: false,
+			rotateCCW: false,
+			softDrop: false,
+			hardDrop: false,
+			moveRight: false,
+			moveLeft: false,
+			hold: false,
+		}
+		this.keysPressed = {
 			rotateCW: false,
 			rotateCCW: false,
 			softDrop: false,
@@ -59,19 +72,26 @@ class TetrisSystem extends System {
 
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
-			if (key) this.keys[key] = true
+			if (key) {
+				this.keys[key] = true
+				this.keysPressed[key] = true
+			}
+			if (key == "moveRight" || key == "moveLeft") this.autorepeat = 0.3
 		})
 		document.addEventListener("keyup", e => {
 			let key = this.keybinds[e.key]
 			if (key) this.keys[key] = false
+			if (key == "moveRight" || key == "moveLeft") {
+				if (this.keys.moveLeft + this.keys.moveRight)
+					this.autorepeat = 0.3
+				else this.autorepeat = Infinity
+			}
 		})
-		this.queue = new NextQueue()
-		this.held = this.queue.next()
-		this.canHold = true
 	}
 
 	execute(delta, time) {
 		this.time += delta
+		this.autorepeat -= delta
 		let tetroQuery = this.queries.tetrominos
 		let dropNow =
 			this.time >= this.fallSpeed / (this.keys.softDrop ? 20 : 1)
@@ -125,8 +145,10 @@ class TetrisSystem extends System {
 					}
 					this.keys.rotateCCW = false
 				}
-				let deltaX = this.keys.moveRight - this.keys.moveLeft
-				if (deltaX) {
+				let deltaX = this.keys.moveRight - this.keys.moveLeft,
+					justPressedMove =
+						this.keysPressed.moveLeft || this.keysPressed.moveRight
+				if (deltaX && (this.autorepeat <= 0 || justPressedMove)) {
 					if (!tetromino.placementMode || tetromino.movesLeft > 0) {
 						let next = moveTetromino(tetromino, { x: deltaX, y: 0 })
 						if (next) {
@@ -161,6 +183,10 @@ class TetrisSystem extends System {
 					c.position.set(shape[i].x * cell, shape[i].y * cell),
 				)
 			},
+		)
+
+		Object.keys(this.keysPressed).forEach(
+			k => (this.keysPressed[k] = false),
 		)
 	}
 
