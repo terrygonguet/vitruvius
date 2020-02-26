@@ -1,5 +1,6 @@
 import Position from "./components/position.js"
 import { range } from "./tools.js"
+import Tetromino from "./components/tetromino.js"
 
 export const width = 10
 export const height = 20
@@ -45,12 +46,10 @@ export function queryTetromino({ direction, position, tetrimino }) {
 }
 
 /**
- * Rotates the tetromino if possible
- * @param {Object} tetromino
- * @param {Direction} tetromino.direction
- * @param {Position} tetromino.position
- * @param {Tetrimino} tetromino.tetrimino
+ * Rotates the tetromino if possible, returns `false` otherwise
+ * @param {Tetromino} tetromino
  * @param {"clockwise" | "counterClockwise"} rotation
+ * @returns {false | Tetromino} `false` or the rotated tetromino
  */
 export function rotateTetromino(tetromino, rotation = "clockwise") {
 	let { direction, position, tetrimino } = tetromino
@@ -79,16 +78,14 @@ export function rotateTetromino(tetromino, rotation = "clockwise") {
 			return nextTetromino
 	}
 
-	return tetromino
+	return false
 }
 
 /**
- * Moves the tetromino if possible, throws otherwise
- * @param {Object} tetromino
- * @param {Direction} tetromino.direction
- * @param {Position} tetromino.position
- * @param {Tetrimino} tetromino.tetrimino
+ * Moves the tetromino if possible, returns `false` otherwise
+ * @param {Tetromino} tetromino
  * @param {Position} delta
+ * @returns {false | Tetromino} `false` or the moved tetromino
  */
 export function moveTetromino({ direction, position, tetrimino }, delta) {
 	let nextPos = position.clone().add(delta)
@@ -99,7 +96,7 @@ export function moveTetromino({ direction, position, tetrimino }, delta) {
 	}
 	if (queryTetromino(nextTetromino).filter(Boolean).length == 0)
 		return nextTetromino
-	else throw new Error("Space is not empty")
+	else return false
 }
 
 export class Tetrimino {
@@ -261,6 +258,45 @@ export class Color {
 
 	toString() {
 		return `${this.name}`
+	}
+}
+
+class Bag {
+	tetriminos = []
+
+	refill() {
+		let temp = [...tetriminos]
+		do {
+			this.tetriminos.push(
+				temp.splice(Math.floor(Math.random() * temp.length), 1)[0],
+			)
+		} while (temp.length)
+	}
+
+	next() {
+		if (!this.tetriminos.length) this.refill()
+		return this.tetriminos.pop()
+	}
+}
+
+export class NextQueue {
+	constructor(size = 6) {
+		this.bag = new Bag()
+		this.size = size
+		this.tetriminos = []
+		this.refill()
+	}
+
+	refill() {
+		do {
+			this.tetriminos.push(this.bag.next())
+		} while (this.tetriminos.length < this.size)
+	}
+
+	next() {
+		let t = this.tetriminos.shift()
+		this.refill()
+		return t
 	}
 }
 

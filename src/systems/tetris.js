@@ -12,6 +12,7 @@ import {
 	matrix,
 	width,
 	Color,
+	NextQueue,
 } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
@@ -31,6 +32,7 @@ class TetrisSystem extends System {
 	init() {
 		this.fallSpeed = 1
 		this.time = 0
+		this.spawnTimer = 0.5
 		this.keys = {
 			rotateCW: false,
 			rotateCCW: false,
@@ -39,7 +41,6 @@ class TetrisSystem extends System {
 			moveRight: false,
 			moveLeft: false,
 			hold: false,
-			spawn: false,
 		}
 		this.keybinds = {
 			ArrowUp: "rotateCW",
@@ -52,7 +53,6 @@ class TetrisSystem extends System {
 			z: "rotateCCW",
 			x: "rotateCW",
 			c: "hold",
-			Enter: "spawn",
 		}
 
 		document.addEventListener("keydown", e => {
@@ -63,86 +63,83 @@ class TetrisSystem extends System {
 			let key = this.keybinds[e.key]
 			if (key) this.keys[key] = false
 		})
+		this.queue = new NextQueue()
+		this.held = this.queue.next()
+		this.canHold = true
 	}
 
 	execute(delta, time) {
-		if (this.keys.spawn && !this.queries.tetrominos.results.length)
-			makeTetromino(Tetrimino.I)
-
 		this.time += delta
+		let tetroQuery = this.queries.tetrominos
 		let dropNow =
 			this.time >= this.fallSpeed / (this.keys.softDrop ? 20 : 1)
-		let { width: w, height: h, cell } = getBoardDimensions()
+		let { cell } = getBoardDimensions()
 
-		this.queries.tetrominos.results.forEach(
+		if (this.spawnTimer > 0) {
+			this.spawnTimer -= delta
+			if (this.spawnTimer <= 0) makeTetromino(this.queue.next())
+		}
+
+		tetroQuery.results.forEach(
 			/** @param {ecsy.Entity} e */
 			e => {
 				let pos = e.getMutableComponent(Position)
 				let tetromino = e.getComponent(Tetromino)
+				let isTouching = !moveTetromino(tetromino, { x: 0, y: -1 })
+				if (isTouching && !tetromino.placementMode) {
+					tetromino.placementMode = true
+					tetromino.movesLeft = 15
+					tetromino.lockdownTimer = 0.5
+				}
+				if (tetromino.placementMode) {
+					if (tetromino.lockdownTimer <= 0 && isTouching)
+						return this.lockDown(e)
+					tetromino.lockdownTimer -= delta
+				}
 
 				if (this.keys.rotateCW) {
-					Object.assign(
-						e.getMutableComponent(Tetromino),
-						rotateTetromino(tetromino, "clockwise"),
-					)
-					this.time = 0
+					if (tetromino.placementMode && tetromino.movesLeft <= 0)
+						return
+					let next = rotateTetromino(tetromino, "clockwise")
+					if (next) {
+						tetromino.movesLeft--
+						tetromino.lockdownTimer = 0.5
+						Object.assign(e.getMutableComponent(Tetromino), next)
+						if (tetromino.position.y < next.position.y)
+							this.time = 0
+					}
 					this.keys.rotateCW = false
 				}
 				if (this.keys.rotateCCW) {
-					Object.assign(
-						e.getMutableComponent(Tetromino),
-						rotateTetromino(tetromino, "counterClockwise"),
-					)
-					this.time = 0
-					this.keys.rotateCCW = false
-				}
-				if (dropNow) {
-					try {
-						Object.assign(
-							tetromino,
-							moveTetromino(tetromino, { x: 0, y: -1 }),
-						)
-					} catch (error) {
-						let { position, direction, tetrimino } = tetromino
-						let shape = tetrimino.shape
-							.get(direction)
-							.map(p => p.clone().add(position))
-						/** @type {ecsy.Entity} */
-						let board = this.queries.board.results[0]
-						let { graphics: boardGraphics } = board.getComponent(
-							Sprite,
-						)
-						shape.forEach(p => {
-							let mino = world.createEntity()
-							matrix[p.y * width + p.x] = mino
-							let g = new Graphics()
-							g.beginFill(Color.Gray.hex).drawRect(
-								0,
-								0,
-								cell,
-								cell,
-							)
-							mino.addComponent(Sprite, {
-								graphics: g,
-								parent: boardGraphics,
-							}).addComponent(Position, p.scale(cell))
-						})
-						e.remove()
-					} finally {
-						this.time = 0
+					if (tetromino.placementMode && tetromino.movesLeft <= 0)
+						return
+					let next = rotateTetromino(tetromino, "counterClockwise")
+					if (next) {
+						tetromino.movesLeft--
+						tetromino.lockdownTimer = 0.5
+						Object.assign(e.getMutableComponent(Tetromino), next)
+						if (tetromino.position.y < next.position.y)
+							this.time = 0
 					}
+					this.keys.rotateCCW = false
 				}
 				let deltaX = this.keys.moveRight - this.keys.moveLeft
 				if (deltaX) {
-					try {
-						Object.assign(
-							tetromino,
-							moveTetromino(tetromino, { x: deltaX, y: 0 }),
-						)
-					} catch (err) {
-					} finally {
-						this.keys.moveLeft = this.keys.moveRight = false
+					if (!tetromino.placementMode || tetromino.movesLeft > 0) {
+						let next = moveTetromino(tetromino, { x: deltaX, y: 0 })
+						if (next) {
+							tetromino.movesLeft--
+							tetromino.lockdownTimer = 0.5
+							tetromino.position.copy(next.position)
+						}
 					}
+					this.keys.moveLeft = this.keys.moveRight = false
+				}
+				if (dropNow && !isTouching) {
+					let next = moveTetromino(tetromino, { x: 0, y: -1 })
+					if (next) tetromino.position.copy(next.position)
+					else this.lockDown(e) // should not happen here
+					this.time = 0
 				}
 
 				let { position } = tetromino
@@ -150,17 +147,49 @@ class TetrisSystem extends System {
 			},
 		)
 
-		this.queries.tetrominos.changed.forEach(
+		tetroQuery.changed.forEach(
 			/** @param {ecsy.Entity} e */
 			e => {
 				let { graphics } = e.getComponent(Sprite)
-				let { direction, tetrimino } = e.getComponent(Tetromino)
+				let { direction, tetrimino } =
+					e.getComponent(Tetromino) ||
+					e.getRemovedComponent(Tetromino)
 				let shape = tetrimino.shape.get(direction)
 				graphics.children.forEach((c, i) =>
 					c.position.set(shape[i].x * cell, shape[i].y * cell),
 				)
 			},
 		)
+	}
+
+	/**
+	 * Performs a lock down
+	 * @param {ecsy.Entity} e
+	 */
+	lockDown(e) {
+		let { cell } = getBoardDimensions()
+		let { position, direction, tetrimino } = e.getComponent(Tetromino)
+		/** @type {ecsy.Entity} */
+		let board = this.queries.board.results[0]
+		let { graphics: boardGraphics } = board.getComponent(Sprite)
+		let shape = tetrimino.shape
+			.get(direction)
+			.map(p => p.clone().add(position))
+		shape.forEach(p => {
+			let mino = world.createEntity()
+			matrix[p.y * width + p.x] = mino
+			let g = new Graphics()
+			g.beginFill(tetrimino.color.hex).drawRect(0, 0, cell, cell)
+			mino.addComponent(Sprite, {
+				graphics: g,
+				parent: boardGraphics,
+			}).addComponent(Position, p.scale(cell))
+		})
+		// remove the logic first and the graphics a bit later to prevent flickering
+		e.removeComponent(Tetromino)
+		setTimeout(() => e.remove(), 50)
+		this.spawnTimer = 0.2
+		this.canHold = true
 	}
 }
 
