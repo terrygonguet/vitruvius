@@ -1,13 +1,15 @@
-import { world, Tetrimino, Direction } from "../globals.js"
+import { world } from "../globals.js"
+import { Tetrimino, Direction } from "../tetris.js"
 import { Container, Graphics } from "pixi.js"
 import Sprite from "../components/sprite.js"
 import Position from "../components/position.js"
+import Tetromino from "../components/tetromino.js"
 
 /**
  * @param {Tetrimino} tetrimino
  * @param {Direction} direction
  */
-export default function makeTetrimino(tetrimino, direction) {
+export default function makeTetromino(tetrimino, direction) {
 	let e = world.createEntity()
 	let graphics = new Container()
 	let shape = tetrimino.shape.get(direction)
@@ -25,12 +27,11 @@ export default function makeTetrimino(tetrimino, direction) {
 		graphics.addChild(g)
 	}
 
-	e.addComponent(Sprite, { graphics, parent: boardGraphics }).addComponent(
-		Position,
-		{
-			x: cell * 4,
-			y: cell * 18,
-		},
-	)
+	e.addComponent(Sprite, { graphics, parent: boardGraphics })
+		.addComponent(Position)
+		.addComponent(Tetromino, {
+			tetrimino,
+			direction,
+		})
 	return e
 }

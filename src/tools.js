@@ -21,3 +21,13 @@ export function _(propName) {
 		return obj[propName]
 	}
 }
+
+/**
+ * Returns the optimal board dimensions for the current screen
+ */
+export function getBoardDimensions() {
+	let width = innerHeight / 2.3,
+		height = 2 * width,
+		cell = width / 10
+	return { width, height, cell }
+}

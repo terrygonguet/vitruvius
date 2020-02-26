@@ -1,17 +1,16 @@
-import { world, app, tetriminos, directions } from "./globals.js"
-
-import Position from "./components/position.js"
-import Sprite from "./components/sprite.js"
+import { world, app } from "./globals.js"
 
 import CollisionSystem from "./systems/collisions.js"
 import MovementSystem from "./systems/movement.js"
 import RenderableSystem from "./systems/renderable.js"
-import TickerSystem from "./systems/ticker.js"
+import EventSystem from "./systems/events.js"
+import TetrisSystem from "./systems/tetris.js"
+
 import makeBoard from "./prefabs/board.js"
-import makeTetrimino from "./prefabs/tetrimino.js"
 
 world
-	.registerSystem(TickerSystem)
+	.registerSystem(EventSystem)
+	.registerSystem(TetrisSystem)
 	.registerSystem(MovementSystem)
 	.registerSystem(CollisionSystem)
 	.registerSystem(RenderableSystem)
@@ -37,17 +36,3 @@ app.loader
 		console.log(world, app)
 	})
 	.load()
-
-let curTetrimino = 0,
-	curDirection = 0,
-	e
-document.addEventListener("click", () => {
-	if (e) e.remove()
-	e = makeTetrimino(tetriminos[curTetrimino], directions[curDirection])
-	curDirection++
-	if (curDirection >= directions.length) {
-		curDirection = 0
-		curTetrimino++
-	}
-	if (curTetrimino >= tetriminos.length) curTetrimino = 0
-})

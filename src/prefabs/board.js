@@ -1,6 +1,6 @@
 import { Graphics } from "pixi.js"
 import { world } from "../globals.js"
-import { range } from "../tools.js"
+import { range, getBoardDimensions } from "../tools.js"
 import Position from "../components/position.js"
 import Sprite from "../components/sprite.js"
 import { TetrisBoard, BreakoutBoard } from "../components/tags.js"
@@ -12,9 +12,7 @@ import { TetrisBoard, BreakoutBoard } from "../components/tags.js"
 export default function makeBoard(position = "left") {
 	let e = world.createEntity()
 	let xOffset = position == "left" ? 1 : 3
-	let w = innerHeight / 2.3,
-		h = 2 * w,
-		cell = w / 10
+	let { width: w, height: h, cell } = getBoardDimensions()
 	let g = new Graphics()
 
 	// draw the borders
