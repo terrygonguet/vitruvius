@@ -4,9 +4,10 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"build": "npm run build:css && npm run build:snowpack && npm run build:babel",
-		"build:css": "tailwind build src/styles.css -o dist/css/styles.css",
-		"build:snowpack": "snowpack && snowpack --dest dist/web_modules/ --no-source-map",
+		"build": "cross-env NODE_ENV=production npm run build:css && npm run build:snowpack && npm run build:babel",
+		"build:css": "postcss -o dist/css/styles.css src/styles.css ",
+		"build:snowpack": "snowpack --optimize --include \"src/**/*.js\" --dest dist/web_modules",
+		"snowpack": "snowpack --dest dist/web_modules/ --include \"src/**/*.js\"",
 		"build:babel": "babel src -d dist",
 		"dev": "babel src -d dist -w"
 	},
@@ -22,6 +23,7 @@
 	},
 	"homepage": "https://github.com/terrygonguet/vitruvius#readme",
 	"dependencies": {
+		"cssnano": "^4.1.10",
 		"ecsy": "^0.2.2",
 		"pixi.js": "^5.2.1",
 		"sat": "^0.8.0"
@@ -31,6 +33,11 @@
 		"@babel/core": "^7.8.4",
 		"@babel/plugin-proposal-class-properties": "^7.8.3",
 		"@babel/preset-env": "^7.8.4",
+		"@fullhuman/postcss-purgecss": "^2.1.0",
+		"autoprefixer": "^9.7.4",
+		"cross-env": "^7.0.0",
+		"postcss": "^7.0.27",
+		"postcss-cli": "^7.1.0",
 		"snowpack": "^1.4.0",
 		"tailwindcss": "^1.2.0"
 	},
