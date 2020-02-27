@@ -29,9 +29,6 @@ class TetrisSystem extends System {
 			components: [Tetromino],
 			listen: { changed: true },
 		},
-		board: {
-			components: [TetrisBoard],
-		},
 	}
 
 	init() {
@@ -73,6 +70,7 @@ class TetrisSystem extends System {
 			c: "hold",
 		}
 		this.heldEntity = world.createEntity()
+		this.ghost = world.createEntity()
 
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
@@ -99,6 +97,17 @@ class TetrisSystem extends System {
 				y: innerHeight / 4,
 			})
 		this.drawHeld()
+
+		// HACK
+		setTimeout(() => {
+			/** @type {ecsy.Entity} */
+			let board = window.tetrisBoard
+			let { graphics: parent } = board.getComponent(Sprite)
+			graphics = new Graphics()
+			this.ghost
+				.addComponent(Sprite, { graphics, parent })
+				.addComponent(Position)
+		}, 150)
 	}
 
 	execute(delta, time) {
@@ -110,7 +119,10 @@ class TetrisSystem extends System {
 
 		if (this.spawnTimer > 0) {
 			this.spawnTimer -= delta
-			if (this.spawnTimer <= 0) makeTetromino(this.queue.next())
+			if (this.spawnTimer <= 0) {
+				let next = makeTetromino(this.queue.next())
+				this.drawGhost(next.getComponent(Tetromino))
+			}
 		}
 
 		tetroQuery.results.forEach(
@@ -119,11 +131,14 @@ class TetrisSystem extends System {
 				let pos = e.getMutableComponent(Position)
 				let tetromino = e.getComponent(Tetromino)
 				let isTouching = !moveTetromino(tetromino, { x: 0, y: -1 })
+				let hasMoved = false
+
 				if (isTouching && !tetromino.placementMode) {
 					tetromino.placementMode = true
 					tetromino.movesLeft = 15
 					tetromino.lockdownTimer = 0.5
 				}
+
 				if (tetromino.placementMode) {
 					if (tetromino.lockdownTimer <= 0 && isTouching)
 						return this.lockDown(e)
@@ -133,9 +148,11 @@ class TetrisSystem extends System {
 				if (this.keys.hold && this.canHold) {
 					this.canHold = false
 					e.remove()
-					makeTetromino(this.held)
+					let next = makeTetromino(this.held)
 					this.held = tetromino.tetrimino
 					this.drawHeld()
+					this.drawGhost(next.getComponent(Tetromino))
+					this.time = 0
 					return
 				}
 
@@ -149,6 +166,7 @@ class TetrisSystem extends System {
 						Object.assign(e.getMutableComponent(Tetromino), next)
 						if (tetromino.position.y < next.position.y)
 							this.time = 0
+						hasMoved = true
 					}
 					this.keys.rotateCW = false
 				}
@@ -162,6 +180,7 @@ class TetrisSystem extends System {
 						Object.assign(e.getMutableComponent(Tetromino), next)
 						if (tetromino.position.y < next.position.y)
 							this.time = 0
+						hasMoved = true
 					}
 					this.keys.rotateCCW = false
 				}
@@ -175,6 +194,7 @@ class TetrisSystem extends System {
 							tetromino.movesLeft--
 							tetromino.lockdownTimer = 0.5
 							tetromino.position.copy(next.position)
+							hasMoved = true
 						}
 					}
 					this.keys.moveLeft = this.keys.moveRight = false
@@ -184,7 +204,10 @@ class TetrisSystem extends System {
 					if (next) tetromino.position.copy(next.position)
 					else this.lockDown(e) // should not happen here
 					this.time = 0
+					hasMoved = true
 				}
+
+				if (hasMoved) this.drawGhost(tetromino)
 
 				let { position } = tetromino
 				pos.set(position.x * cell, position.y * cell)
@@ -217,7 +240,7 @@ class TetrisSystem extends System {
 	lockDown(e) {
 		let { position, direction, tetrimino } = e.getComponent(Tetromino)
 		/** @type {ecsy.Entity} */
-		let board = this.queries.board.results[0]
+		let board = window.tetrisBoard
 		let { graphics: boardGraphics } = board.getComponent(Sprite)
 		let shape = tetrimino.shape
 			.get(direction)
@@ -259,7 +282,7 @@ class TetrisSystem extends System {
 
 	drawHeld() {
 		/** @type {{ graphics: PIXI.Graphics }} */
-		let { graphics } = this.heldEntity.getComponent(Sprite)
+		let { graphics } = this.heldEntity.getMutableComponent(Sprite)
 		const shape = this.held.shape.get(Direction.North)
 		graphics
 			.clear()
@@ -268,6 +291,26 @@ class TetrisSystem extends System {
 		for (const p of shape) {
 			graphics.drawRect(p.x * cell, p.y * cell, cell, cell)
 		}
+	}
+
+	/**
+	 * @param {Tetromino} tetromino
+	 */
+	drawGhost(tetromino) {
+		/** @type {{ graphics: PIXI.Graphics }} */
+		let { graphics } = this.ghost.getMutableComponent(Sprite)
+		let pos = this.ghost.getMutableComponent(Position)
+		let { direction, position, tetrimino } = tetromino
+		let i = 1
+		graphics.clear().beginFill(tetrimino.color.hex, 0.4)
+		while (moveTetromino(tetromino, { x: 0, y: -i })) i++
+		if (i == 1) return
+		const y = position.y - (i - 1)
+		const shape = tetrimino.shape.get(direction)
+		for (const p of shape) {
+			graphics.drawRect(p.x * cell, p.y * cell, cell, cell)
+		}
+		pos.set(position.x * cell, y * cell)
 	}
 }
 
