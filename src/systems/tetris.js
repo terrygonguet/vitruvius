@@ -130,6 +130,11 @@ class TetrisSystem extends System {
 				let isTouching = !moveTetromino(tetromino, { x: 0, y: -1 })
 				let hasMoved = false
 
+				if (this.keysPressed.hardDrop) {
+					while (moveTetromino(tetromino, { x: 0, y: -1 }))
+						tetromino.position.y--
+				}
+
 				if (isTouching && !tetromino.placementMode) {
 					tetromino.placementMode = true
 					tetromino.movesLeft = 15
