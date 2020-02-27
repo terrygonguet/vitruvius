@@ -15,10 +15,13 @@ import {
 	NextQueue,
 	bufferHeight,
 	queryLine,
+	Direction,
 } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
 import { Graphics } from "pixi.js"
+
+let { cell } = getBoardDimensions()
 
 class TetrisSystem extends System {
 	static queries = {
@@ -69,6 +72,7 @@ class TetrisSystem extends System {
 			x: "rotateCW",
 			c: "hold",
 		}
+		this.heldEntity = world.createEntity()
 
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
@@ -87,6 +91,14 @@ class TetrisSystem extends System {
 				else this.autorepeat = Infinity
 			}
 		})
+		let graphics = new Graphics()
+		this.heldEntity
+			.addComponent(Sprite, { graphics })
+			.addComponent(Position, {
+				x: innerWidth / 2 - cell,
+				y: innerHeight / 4,
+			})
+		this.drawHeld()
 	}
 
 	execute(delta, time) {
@@ -95,7 +107,6 @@ class TetrisSystem extends System {
 		let tetroQuery = this.queries.tetrominos
 		let dropNow =
 			this.time >= this.fallSpeed / (this.keys.softDrop ? 20 : 1)
-		let { cell } = getBoardDimensions()
 
 		if (this.spawnTimer > 0) {
 			this.spawnTimer -= delta
@@ -117,6 +128,15 @@ class TetrisSystem extends System {
 					if (tetromino.lockdownTimer <= 0 && isTouching)
 						return this.lockDown(e)
 					tetromino.lockdownTimer -= delta
+				}
+
+				if (this.keys.hold && this.canHold) {
+					this.canHold = false
+					e.remove()
+					makeTetromino(this.held)
+					this.held = tetromino.tetrimino
+					this.drawHeld()
+					return
 				}
 
 				if (this.keys.rotateCW) {
@@ -195,7 +215,6 @@ class TetrisSystem extends System {
 	 * @param {ecsy.Entity} e
 	 */
 	lockDown(e) {
-		let { cell } = getBoardDimensions()
 		let { position, direction, tetrimino } = e.getComponent(Tetromino)
 		/** @type {ecsy.Entity} */
 		let board = this.queries.board.results[0]
@@ -221,7 +240,6 @@ class TetrisSystem extends System {
 	}
 
 	clearLines() {
-		let { cell } = getBoardDimensions()
 		for (let y = 0; y < bufferHeight; y++) {
 			let query = queryLine(y).filter(e => e && e.id)
 			if (query.length != 10) continue
@@ -236,6 +254,19 @@ class TetrisSystem extends System {
 			}
 			query.forEach(e => e.remove())
 			y-- // the rows moved down
+		}
+	}
+
+	drawHeld() {
+		/** @type {{ graphics: PIXI.Graphics }} */
+		let { graphics } = this.heldEntity.getComponent(Sprite)
+		const shape = this.held.shape.get(Direction.North)
+		graphics
+			.clear()
+			.beginFill(this.held.color.hex)
+			.scale.set(1, -1)
+		for (const p of shape) {
+			graphics.drawRect(p.x * cell, p.y * cell, cell, cell)
 		}
 	}
 }

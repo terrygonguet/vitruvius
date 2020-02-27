@@ -294,6 +294,7 @@ export class NextQueue {
 	constructor(size = 6) {
 		this.bag = new Bag()
 		this.size = size
+		/** @type {Tetrimino[]} */
 		this.tetriminos = []
 		this.refill()
 	}
