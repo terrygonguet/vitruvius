@@ -9,20 +9,21 @@ import TetrisSystem from "./systems/tetris.js"
 import makeBoard from "./prefabs/board.js"
 import { matrix } from "./tetris.js"
 
-world
-	.registerSystem(EventSystem)
-	.registerSystem(TetrisSystem)
-	.registerSystem(MovementSystem)
-	.registerSystem(CollisionSystem)
-	.registerSystem(RenderableSystem)
-
 app.loader
 	.on("error", (err, loader, res) => {
 		console.error(err, loader, res)
 	})
 	.on("complete", () => {
 		window.tetrisBoard = makeBoard("left")
-		makeBoard("right")
+		window.brakoutBoard = makeBoard("right")
+
+		world
+			.registerSystem(EventSystem)
+			.registerSystem(TetrisSystem)
+			.registerSystem(MovementSystem)
+			.registerSystem(CollisionSystem)
+			.registerSystem(RenderableSystem)
+
 		let prev = performance.now(),
 			now,
 			delta

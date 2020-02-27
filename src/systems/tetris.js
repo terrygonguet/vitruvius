@@ -98,16 +98,13 @@ class TetrisSystem extends System {
 			})
 		this.drawHeld()
 
-		// HACK
-		setTimeout(() => {
-			/** @type {ecsy.Entity} */
-			let board = window.tetrisBoard
-			let { graphics: parent } = board.getComponent(Sprite)
-			graphics = new Graphics()
-			this.ghost
-				.addComponent(Sprite, { graphics, parent })
-				.addComponent(Position)
-		}, 150)
+		/** @type {ecsy.Entity} */
+		let board = window.tetrisBoard
+		let { graphics: parent } = board.getComponent(Sprite)
+		graphics = new Graphics()
+		this.ghost
+			.addComponent(Sprite, { graphics, parent })
+			.addComponent(Position)
 	}
 
 	execute(delta, time) {
