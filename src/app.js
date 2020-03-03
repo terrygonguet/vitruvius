@@ -30,8 +30,11 @@ app.loader
 		requestAnimationFrame(function raf(time) {
 			now = performance.now()
 			delta = now - prev
-			world.execute(delta / 1000, time)
 			prev = now
+			if (world.enabled) {
+				world.execute(delta / 1000, time)
+				app.render()
+			}
 			requestAnimationFrame(raf)
 		})
 
@@ -42,5 +45,7 @@ app.loader
 document.addEventListener("keydown", e => {
 	if (e.key == "Escape" || e.key == "F1") {
 		world.enabled = !world.enabled
+	} else if (e.key == "Enter") {
+		world.execute()
 	}
 })

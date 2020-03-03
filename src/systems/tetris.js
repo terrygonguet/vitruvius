@@ -2,24 +2,22 @@ import { System } from "ecsy"
 import Tetromino from "../components/tetromino.js"
 import Sprite from "../components/sprite.js"
 import Position from "../components/position.js"
-import { TetrisBoard } from "../components/tags.js"
 import { getBoardDimensions, range } from "../tools.js"
 import {
-	queryTetromino,
-	Tetrimino,
 	moveTetromino,
 	rotateTetromino,
 	matrix,
 	width,
-	Color,
 	NextQueue,
 	bufferHeight,
 	queryLine,
 	Direction,
+	initMatrix,
 } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
 import { Graphics } from "pixi.js"
+import { makeMino } from "../prefabs/mino.js"
 
 let { cell } = getBoardDimensions()
 
@@ -105,6 +103,8 @@ class TetrisSystem extends System {
 		this.ghost
 			.addComponent(Sprite, { graphics, parent })
 			.addComponent(Position)
+
+		initMatrix()
 	}
 
 	execute(delta, time) {
@@ -248,14 +248,11 @@ class TetrisSystem extends System {
 			.get(direction)
 			.map(p => p.clone().add(position))
 		shape.forEach(p => {
-			let mino = world.createEntity()
-			matrix[p.y * width + p.x] = mino
-			let g = new Graphics()
-			g.beginFill(tetrimino.color.hex).drawRect(0, 0, cell, cell)
-			mino.addComponent(Sprite, {
-				graphics: g,
+			matrix[p.y * width + p.x] = makeMino({
+				position: p,
+				color: tetrimino.color,
 				parent: boardGraphics,
-			}).addComponent(Position, p.scale(cell))
+			})
 		})
 		e.remove()
 		this.spawnTimer = 0.2
@@ -268,6 +265,7 @@ class TetrisSystem extends System {
 		for (let y = 0; y < bufferHeight; y++) {
 			let query = queryLine(y).filter(e => e && e.id)
 			if (query.length != 10) continue
+			// drop all blocks above by one line
 			for (const i of range(0, width - 1)) {
 				for (const j of range(y + 1, bufferHeight - 1)) {
 					let e = matrix[j * width + i]

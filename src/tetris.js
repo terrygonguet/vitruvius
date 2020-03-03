@@ -1,13 +1,38 @@
 import Position from "./components/position.js"
 import { range } from "./tools.js"
 import Tetromino from "./components/tetromino.js"
+import { makeMino } from "./prefabs/mino.js"
 
 export const width = 10
 export const height = 20
 export const bufferHeight = 40
 
 /** @type {ecsy.Entity[]} */
-export const matrix = new Array(10 * 40).fill(undefined)
+export const matrix = []
+
+export function initMatrix({
+	createEntities = true,
+	clearEntities = true,
+	junkLines = 6,
+} = {}) {
+	if (clearEntities) matrix.forEach(e => e && e.id && e.remove())
+	matrix.length = 0 // reset
+	matrix.length = width * bufferHeight
+	matrix.fill(undefined)
+
+	if (!createEntities) return
+
+	for (const y of range(0, junkLines - 1)) {
+		let holeX = Math.floor(Math.random() * width)
+		for (const x of range(0, width - 1)) {
+			if (x == holeX) continue
+			matrix[y * width + x] = makeMino({
+				position: new Position(x, y),
+				color: Color.Gray,
+			})
+		}
+	}
+}
 
 /**
  * Returns wether the position is outside matrix bounds
@@ -24,7 +49,8 @@ function isOOB(position) {
 
 /**
  * Returns an array of the same size as its argument containing
- * the objects in the respective positions in the matrix
+ * the objects in the respective positions in the matrix or `true`
+ * for positions outside of matrix bounds
  * @param {Position[]} positions the array of matrix positions to query
  */
 export function queryMatrix(positions) {
