@@ -1,140 +1,276 @@
 import Position from "./components/position.js"
 import { range } from "./tools.js"
 import Tetromino from "./components/tetromino.js"
-import { makeMino } from "./prefabs/mino.js"
 
 export const width = 10
 export const height = 20
 export const bufferHeight = 40
 
-/** @type {ecsy.Entity[]} */
-export const matrix = []
+/**
+ * @typedef {Object} CellChangeEvent - The data given to listeners of the matrix
+ * @property {Boolean} all - `true` when all the cells of the matrix have been changed
+ * @property {number=} x - The x coord when `all` is `false`
+ * @property {number=} y - The y coord when `all` is `false`
+ */
 
-export function initMatrix({
-	createEntities = true,
-	clearEntities = true,
-	junkLines = 6,
-} = {}) {
-	if (clearEntities) matrix.forEach(e => e && e.id && e.remove())
-	matrix.length = 0 // reset
-	matrix.length = width * bufferHeight
-	matrix.fill(undefined)
+/**
+ * @typedef {(e: CellChangeEvent) => void} CellChangeHandler
+ */
 
-	if (!createEntities) return
+class Matrix {
+	/** @type {Color[]} */
+	cells = []
+	/** @type {Map<string, Set<CellChangeHandler>>} */
+	listeners = new Map()
 
-	for (const y of range(0, junkLines - 1)) {
-		let holeX = Math.floor(Math.random() * width)
+	/**
+	 * @param {Object} options
+	 * @param {number?} junkLines The number of junk lines to spawn
+	 */
+	init({ junkLines = 6 } = {}) {
+		this.cells = new Array(width * bufferHeight).fill(undefined)
+		this.listeners.clear()
+		this.listeners.set("all", new Set())
+
+		if (!junkLines) return
+
+		for (const y of range(0, junkLines - 1)) {
+			let holeX = Math.floor(Math.random() * width)
+			for (const x of range(0, width - 1)) {
+				if (x == holeX) continue
+				this.cells[y * width + x] = Color.Gray
+			}
+		}
+
+		this._dispatchAll()
+	}
+
+	/**
+	 * Returns wether the position is outside matrix bounds
+	 * @param {number|Position} posOrX
+	 * @param {number=} y
+	 */
+	isOOB(posOrX, y) {
+		let x
+		if (Number.isInteger(posOrX)) x = posOrX
+		else {
+			x = posOrX.x
+			y = posOrX.y
+		}
+
+		return x < 0 || x >= width || y < 0 || y >= bufferHeight
+	}
+
+	/**
+	 * Returns an array of the same size as its argument containing
+	 * the objects in the respective positions in the matrix
+	 * @param {Position[]} positions the array of matrix positions to query
+	 */
+	query(positions) {
+		return positions.map(p =>
+			this.isOOB(p) ? Color.Gray : this.cells[p.y * width + p.x],
+		)
+	}
+
+	/**
+	 * Returns an array containing the objects in the matrix
+	 * at the position of the given tetromino
+	 * @param {Object} tetromino
+	 * @param {Direction} tetromino.direction
+	 * @param {Position} tetromino.position
+	 * @param {Tetrimino} tetromino.tetrimino
+	 */
+	queryTetromino({ direction, position, tetrimino }) {
+		return this.query(
+			tetrimino.shape.get(direction).map(p => p.clone().add(position)),
+		)
+	}
+
+	/**
+	 * Returns the contents of the matrix for the line
+	 * @param {number} y The coordinate of the row to query
+	 */
+	queryLine(y) {
+		let vals = []
 		for (const x of range(0, width - 1)) {
-			if (x == holeX) continue
-			matrix[y * width + x] = makeMino({
-				position: new Position(x, y),
-				color: Color.Gray,
-			})
+			vals.push(this.cells[y * width + x])
 		}
+		return vals
 	}
-}
 
-/**
- * Returns wether the position is outside matrix bounds
- * @param {Position} position
- */
-function isOOB(position) {
-	return (
-		position.x < 0 ||
-		position.x >= width ||
-		position.y < 0 ||
-		position.y >= bufferHeight
-	)
-}
+	/**
+	 * Rotates the tetromino if possible, returns `false` otherwise
+	 * @param {Tetromino} tetromino
+	 * @param {"clockwise" | "counterClockwise"} rotation
+	 * @returns {false | Tetromino} `false` or the rotated tetromino
+	 */
+	rotateTetromino(tetromino, rotation = "clockwise") {
+		let { direction, position, tetrimino } = tetromino
 
-/**
- * Returns an array of the same size as its argument containing
- * the objects in the respective positions in the matrix or `true`
- * for positions outside of matrix bounds
- * @param {Position[]} positions the array of matrix positions to query
- */
-export function queryMatrix(positions) {
-	return positions.map(p => (isOOB(p) ? true : matrix[p.y * width + p.x]))
-}
+		// no-op
+		if (tetrimino == Tetrimino.O) return tetromino
 
-/**
- * Returns an array containing the objects in the matrix
- * at the position of the given tetromino
- * @param {Object} tetromino
- * @param {Direction} tetromino.direction
- * @param {Position} tetromino.position
- * @param {Tetrimino} tetromino.tetrimino
- */
-export function queryTetromino({ direction, position, tetrimino }) {
-	return queryMatrix(
-		tetrimino.shape.get(direction).map(p => p.clone().add(position)),
-	)
-}
+		let nextDirection = direction[rotation]
+		let sourceAxes = tetrimino.axes.get(direction)
+		let destAxes = tetrimino.axes.get(nextDirection)
+		let nextPos = position.clone()
+		let nextTetromino
 
-/**
- * Rotates the tetromino if possible, returns `false` otherwise
- * @param {Tetromino} tetromino
- * @param {"clockwise" | "counterClockwise"} rotation
- * @returns {false | Tetromino} `false` or the rotated tetromino
- */
-export function rotateTetromino(tetromino, rotation = "clockwise") {
-	let { direction, position, tetrimino } = tetromino
+		for (const [src, i] of range(sourceAxes)) {
+			let dest = destAxes[i]
+			nextPos
+				.copy(position)
+				.add(src)
+				.sub(dest)
+			nextTetromino = {
+				direction: nextDirection,
+				position: nextPos,
+				tetrimino,
+			}
+			if (this.queryTetromino(nextTetromino).filter(Boolean).length == 0)
+				return nextTetromino
+		}
 
-	// no-op
-	if (tetrimino == Tetrimino.O) return arguments[0]
+		return false
+	}
 
-	let nextDirection = direction[rotation]
-	let sourceAxes = tetrimino.axes.get(direction)
-	let destAxes = tetrimino.axes.get(nextDirection)
-	let nextPos = position.clone()
-	let nextTetromino
-
-	for (const [src, i] of range(sourceAxes)) {
-		let dest = destAxes[i]
-		nextPos
-			.copy(position)
-			.add(src)
-			.sub(dest)
-		nextTetromino = {
-			direction: nextDirection,
-			position: nextPos,
+	/**
+	 * Moves the tetromino if possible, returns `false` otherwise
+	 * @param {Tetromino} tetromino
+	 * @param {Position} delta
+	 * @returns {false | Tetromino} `false` or the moved tetromino
+	 */
+	moveTetromino({ direction, position, tetrimino }, delta) {
+		let nextPos = position.clone().add(delta)
+		let nextTetromino = {
+			direction,
 			tetrimino,
+			position: nextPos,
 		}
-		if (queryTetromino(nextTetromino).filter(Boolean).length == 0)
+		if (this.queryTetromino(nextTetromino).filter(Boolean).length == 0)
 			return nextTetromino
+		else return false
 	}
 
-	return false
-}
-
-/**
- * Moves the tetromino if possible, returns `false` otherwise
- * @param {Tetromino} tetromino
- * @param {Position} delta
- * @returns {false | Tetromino} `false` or the moved tetromino
- */
-export function moveTetromino({ direction, position, tetrimino }, delta) {
-	let nextPos = position.clone().add(delta)
-	let nextTetromino = {
-		direction,
-		tetrimino,
-		position: nextPos,
+	/**
+	 * get the data at the position
+	 * @param {number|Position} posOrX
+	 * @param {number?} y
+	 */
+	get(posOrX, y) {
+		let x
+		if (Number.isInteger(posOrX)) x = posOrX
+		else {
+			x = posOrX.x
+			y = posOrX.y
+		}
+		if (this.isOOB(x, y)) return Color.Gray
+		else return this.cells[y * width + x]
 	}
-	if (queryTetromino(nextTetromino).filter(Boolean).length == 0)
-		return nextTetromino
-	else return false
+
+	/**
+	 * set the color at the position
+	 * @param {number|Position} posOrX
+	 * @param {number|Color} colorOrY
+	 * @param {Color=} color
+	 */
+	set(posOrX, colorOrY, color) {
+		let x, y
+		if (Number.isInteger(posOrX)) {
+			x = posOrX
+			y = colorOrY
+		} else {
+			x = posOrX.x
+			y = posOrX.y
+			color = colorOrY
+		}
+		this.cells[y * width + y] = color
+		this._dispatchOne(x, y)
+		return color
+	}
+
+	/**
+	 * Set multiple cells at the same time. Arguments **must**
+	 * have the same length if they are both arrays
+	 * @param {Position[]} positions
+	 * @param {Color[]|Color} colors
+	 */
+	setMultiple(positions, colors) {
+		const isColorsAnArray = Array.isArray(colors)
+		if (isColorsAnArray && positions.length != colors.length)
+			throw new Error("Lengths of arrays are different")
+		for (const [pos, i] of range(positions)) {
+			this.cells[pos.y * width + pos.x] = isColorsAnArray
+				? colors[i]
+				: colors
+		}
+		for (const p of positions) this._dispatchOne(p.x, p.y)
+	}
+
+	/**
+	 * listens to either every cell change in the matrix or at specific coordinates
+	 * @param {CellChangeHandler} fn
+	 * @param {number|Position|true} posOrX
+	 * @param {number=} y
+	 */
+	listen(fn, posOrX, y) {
+		if (posOrX === true || posOrX == undefined) {
+			this.listeners.get("all").add(fn)
+			return
+		}
+		let x
+		if (Number.isInteger(posOrX)) x = posOrX
+		else {
+			x = posOrX.x
+			y = posOrX.y
+		}
+		const key = x + "_" + y
+		let set = this.listeners.get(key)
+		if (set) set.add(fn)
+		else this.listeners.set(key, new Set([fn]))
+	}
+
+	/**
+	 * Stop listening. Needs the **same** parameters as `listen`
+	 * @param {CellChangeHandler} fn
+	 * @param {number|Position|true} posOrX
+	 * @param {number=} y
+	 */
+	removeListener(fn, posOrX, y) {
+		if (posOrX === true || posOrX == undefined) {
+			this.listeners.get("all").delete(fn)
+			return
+		}
+		let x
+		if (Number.isInteger(posOrX)) x = posOrX
+		else {
+			x = posOrX.x
+			y = posOrX.y
+		}
+		const key = x + "_" + y
+		let set = this.listeners.get(key)
+		if (set) set.delete(fn)
+	}
+
+	_dispatchAll() {
+		for (const set of this.listeners.values()) {
+			for (const fn of set.values()) fn({ all: true })
+		}
+	}
+
+	/**
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	_dispatchOne(x, y) {
+		let key = x + "_" + y,
+			set = this.listeners.get(key)
+		if (set) for (const fn of set) fn({ all: false, x, y })
+		for (const fn of this.listeners.get("all")) fn({ all: false, x, y })
+	}
 }
 
-/**
- * Returns the contents of the matrix for the line
- * @param {number} y The coordinate of the row to query
- */
-export function queryLine(y) {
-	let temps = Array(width)
-		.fill(0)
-		.map((_, x) => new Position(x, y))
-	return queryMatrix(temps)
-}
+export const matrix = new Matrix()
 
 export class Tetrimino {
 	static O = new Tetrimino("O")

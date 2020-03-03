@@ -3,21 +3,11 @@ import Tetromino from "../components/tetromino.js"
 import Sprite from "../components/sprite.js"
 import Position from "../components/position.js"
 import { getBoardDimensions, range } from "../tools.js"
-import {
-	moveTetromino,
-	rotateTetromino,
-	matrix,
-	width,
-	NextQueue,
-	bufferHeight,
-	queryLine,
-	Direction,
-	initMatrix,
-} from "../tetris.js"
+import { matrix, width, NextQueue, bufferHeight, Direction } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
 import { Graphics } from "pixi.js"
-import { makeMino } from "../prefabs/mino.js"
+import MinoManager from "../utils/minoManager.js"
 
 let { cell } = getBoardDimensions()
 
@@ -69,6 +59,7 @@ class TetrisSystem extends System {
 		}
 		this.heldEntity = world.createEntity()
 		this.ghost = world.createEntity()
+		this.minoManager = new MinoManager()
 
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
@@ -103,8 +94,8 @@ class TetrisSystem extends System {
 		this.ghost
 			.addComponent(Sprite, { graphics, parent })
 			.addComponent(Position)
-
-		initMatrix()
+		matrix.init()
+		this.minoManager.init()
 	}
 
 	execute(delta, time) {
@@ -127,11 +118,14 @@ class TetrisSystem extends System {
 			e => {
 				let pos = e.getMutableComponent(Position)
 				let tetromino = e.getComponent(Tetromino)
-				let isTouching = !moveTetromino(tetromino, { x: 0, y: -1 })
+				let isTouching = !matrix.moveTetromino(tetromino, {
+					x: 0,
+					y: -1,
+				})
 				let hasMoved = false
 
 				if (this.keysPressed.hardDrop) {
-					while (moveTetromino(tetromino, { x: 0, y: -1 }))
+					while (matrix.moveTetromino(tetromino, { x: 0, y: -1 }))
 						tetromino.position.y--
 				}
 
@@ -161,7 +155,7 @@ class TetrisSystem extends System {
 				if (this.keys.rotateCW) {
 					if (tetromino.placementMode && tetromino.movesLeft <= 0)
 						return
-					let next = rotateTetromino(tetromino, "clockwise")
+					let next = matrix.rotateTetromino(tetromino, "clockwise")
 					if (next) {
 						tetromino.movesLeft--
 						tetromino.lockdownTimer = 0.5
@@ -175,7 +169,10 @@ class TetrisSystem extends System {
 				if (this.keys.rotateCCW) {
 					if (tetromino.placementMode && tetromino.movesLeft <= 0)
 						return
-					let next = rotateTetromino(tetromino, "counterClockwise")
+					let next = matrix.rotateTetromino(
+						tetromino,
+						"counterClockwise",
+					)
 					if (next) {
 						tetromino.movesLeft--
 						tetromino.lockdownTimer = 0.5
@@ -191,7 +188,10 @@ class TetrisSystem extends System {
 						this.keysPressed.moveLeft || this.keysPressed.moveRight
 				if (deltaX && (this.autorepeat <= 0 || justPressedMove)) {
 					if (!tetromino.placementMode || tetromino.movesLeft > 0) {
-						let next = moveTetromino(tetromino, { x: deltaX, y: 0 })
+						let next = matrix.moveTetromino(tetromino, {
+							x: deltaX,
+							y: 0,
+						})
 						if (next) {
 							tetromino.movesLeft--
 							tetromino.lockdownTimer = 0.5
@@ -202,7 +202,7 @@ class TetrisSystem extends System {
 					this.keys.moveLeft = this.keys.moveRight = false
 				}
 				if (dropNow && !isTouching) {
-					let next = moveTetromino(tetromino, { x: 0, y: -1 })
+					let next = matrix.moveTetromino(tetromino, { x: 0, y: -1 })
 					if (next) tetromino.position.copy(next.position)
 					else this.lockDown(e) // should not happen here
 					this.time = 0
@@ -241,19 +241,10 @@ class TetrisSystem extends System {
 	 */
 	lockDown(e) {
 		let { position, direction, tetrimino } = e.getComponent(Tetromino)
-		/** @type {ecsy.Entity} */
-		let board = window.tetrisBoard
-		let { graphics: boardGraphics } = board.getComponent(Sprite)
 		let shape = tetrimino.shape
 			.get(direction)
 			.map(p => p.clone().add(position))
-		shape.forEach(p => {
-			matrix[p.y * width + p.x] = makeMino({
-				position: p,
-				color: tetrimino.color,
-				parent: boardGraphics,
-			})
-		})
+		matrix.setMultiple(shape, tetrimino.color)
 		e.remove()
 		this.spawnTimer = 0.2
 		this.canHold = true
@@ -263,19 +254,17 @@ class TetrisSystem extends System {
 
 	clearLines() {
 		for (let y = 0; y < bufferHeight; y++) {
-			let query = queryLine(y).filter(e => e && e.id)
+			let query = matrix.queryLine(y).filter(Boolean)
 			if (query.length != 10) continue
 			// drop all blocks above by one line
-			for (const i of range(0, width - 1)) {
-				for (const j of range(y + 1, bufferHeight - 1)) {
-					let e = matrix[j * width + i]
-					matrix[(j - 1) * width + i] = e
-					if (!e) continue
-					let position = e.getMutableComponent(Position)
-					position.y -= cell
-				}
+			let temps = Array.from(range(0, width - 1)).map(
+				x => new Position(x, 0),
+			)
+			for (const j of range(y + 1, bufferHeight - 1)) {
+				let rowAbove = matrix.queryLine(j)
+				temps.forEach(p => (p.y = j - 1))
+				matrix.setMultiple(temps, rowAbove)
 			}
-			query.forEach(e => e.remove())
 			y-- // the rows moved down
 		}
 	}
@@ -303,7 +292,7 @@ class TetrisSystem extends System {
 		let { direction, position, tetrimino } = tetromino
 		let i = 1
 		graphics.clear().beginFill(tetrimino.color.hex, 0.4)
-		while (moveTetromino(tetromino, { x: 0, y: -i })) i++
+		while (matrix.moveTetromino(tetromino, { x: 0, y: -i })) i++
 		if (i == 1) return
 		const y = position.y - (i - 1)
 		const shape = tetrimino.shape.get(direction)
