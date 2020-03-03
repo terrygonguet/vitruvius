@@ -15,7 +15,7 @@ app.loader
 	})
 	.on("complete", () => {
 		window.tetrisBoard = makeBoard("left")
-		window.brakoutBoard = makeBoard("right")
+		window.breakoutBoard = makeBoard("right")
 
 		world
 			.registerSystem(EventSystem)
