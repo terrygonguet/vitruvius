@@ -9,7 +9,7 @@ import { world } from "../globals.js"
 import { Graphics } from "pixi.js"
 import MinoManager from "../utils/minoManager.js"
 
-let { cell } = getBoardDimensions()
+let { cell, width: boardWidth } = getBoardDimensions()
 
 class TetrisSystem extends System {
 	static queries = {
@@ -82,7 +82,7 @@ class TetrisSystem extends System {
 		this.heldEntity
 			.addComponent(Sprite, { graphics })
 			.addComponent(Position, {
-				x: innerWidth / 2 - cell,
+				x: innerWidth / 4 + boardWidth / 2 + 2 * cell,
 				y: innerHeight / 4,
 			})
 		this.drawHeld()

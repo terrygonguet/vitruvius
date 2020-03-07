@@ -16,7 +16,7 @@ export default class MinoManager {
 	tetrisBoard
 	/** @type {ecsy.Entity} */
 	breakoutBoard
-	breakoutOffset = 7
+	breakoutOffset = 10
 
 	init() {
 		matrix.listen(this.listener.bind(this), true)

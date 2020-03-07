@@ -27,7 +27,7 @@ class Matrix {
 	 * @param {Object} options
 	 * @param {number?} junkLines The number of junk lines to spawn
 	 */
-	init({ junkLines = 6 } = {}) {
+	init({ junkLines = 8 } = {}) {
 		this.cells = new Array(width * bufferHeight).fill(undefined)
 		this.listeners.clear()
 		this.listeners.set("all", new Set())

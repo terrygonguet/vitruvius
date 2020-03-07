@@ -5,6 +5,7 @@ import MovementSystem from "./systems/movement.js"
 import RenderableSystem from "./systems/renderable.js"
 import EventSystem from "./systems/events.js"
 import TetrisSystem from "./systems/tetris.js"
+import BreakoutSystem from "./systems/breakout.js"
 
 import makeBoard from "./prefabs/board.js"
 import { matrix } from "./tetris.js"
@@ -20,6 +21,7 @@ app.loader
 		world
 			.registerSystem(EventSystem)
 			.registerSystem(TetrisSystem)
+			.registerSystem(BreakoutSystem)
 			.registerSystem(MovementSystem)
 			.registerSystem(CollisionSystem)
 			.registerSystem(RenderableSystem)

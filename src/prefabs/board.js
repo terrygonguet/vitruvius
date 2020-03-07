@@ -11,7 +11,9 @@ import { TetrisBoard, BreakoutBoard } from "../components/tags.js"
  */
 export default function makeBoard(position = "left") {
 	let e = world.createEntity()
-	let xOffset = (position == "left" ? 1 : 3) * (innerWidth / 4)
+	let isTetris = position == "left"
+	let isBreakout = !isTetris
+	let xOffset = (isTetris ? 1 : 3) * (innerWidth / 4)
 	let { width: w, height: h, cell } = getBoardDimensions()
 	let g = new Graphics()
 
@@ -36,7 +38,7 @@ export default function makeBoard(position = "left") {
 		y: innerHeight / 2 + w,
 	})
 	e.addComponent(Sprite, { graphics: g })
-	e.addComponent(position == "left" ? TetrisBoard : BreakoutBoard)
+	e.addComponent(isTetris ? TetrisBoard : BreakoutBoard)
 
 	return e
 }

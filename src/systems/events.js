@@ -19,7 +19,7 @@ class EventSystem extends System {
 			/** @param {ecsy.Entity} e */
 			e => {
 				let evtg = e.getComponent(EventTarget)
-				evtg.dispatchEvent(
+				evtg?.dispatchEvent(
 					new CustomEvent("tick", {
 						detail: { entity: e, delta, time },
 					}),
@@ -30,7 +30,7 @@ class EventSystem extends System {
 			/** @param {ecsy.Entity} e */
 			e => {
 				let evtg = e.getComponent(EventTarget)
-				evtg.dispatchEvent(
+				evtg?.dispatchEvent(
 					new CustomEvent("added", {
 						detail: { entity: e },
 					}),
@@ -41,7 +41,7 @@ class EventSystem extends System {
 			/** @param {ecsy.Entity} e */
 			e => {
 				let evtg = e.getRemovedComponent(EventTarget)
-				evtg.dispatchEvent(
+				evtg?.dispatchEvent(
 					new CustomEvent("removed", {
 						detail: { entity: e },
 					}),

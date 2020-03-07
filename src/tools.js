@@ -31,3 +31,15 @@ export function getBoardDimensions() {
 		cell = width / 10
 	return { width, height, cell }
 }
+
+/**
+ * Clamps the first value between the given values
+ * @param {number} val
+ * @param {number} min
+ * @param {number} max
+ */
+export function clamp(val, min, max) {
+	if (val < min) return min
+	else if (val > max) return max
+	else return val
+}
