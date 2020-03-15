@@ -17,12 +17,12 @@ app.loader
 		window.breakoutBoard = makeBoard("right")
 
 		world
-			.registerSystem(EventSystem)
 			.registerSystem(TetrisSystem)
 			.registerSystem(BreakoutSystem)
 			.registerSystem(MovementSystem)
 			.registerSystem(CollisionSystem)
 			.registerSystem(RenderableSystem)
+			.registerSystem(EventSystem)
 
 		let prev = performance.now(),
 			now,

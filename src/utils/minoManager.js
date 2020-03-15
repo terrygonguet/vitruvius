@@ -62,7 +62,7 @@ export default class MinoManager {
 		let breakoutMino = this.breakoutMinos[y * width + x]
 		// set mino in tetris board
 		if (!tetrisMino && color) {
-			let mino = world.createEntity()
+			let mino = world.createEntity("Tetris Mino")
 			let { graphics: parent } = this.tetrisBoard.getComponent(Sprite)
 			let graphics = new Graphics()
 			graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)
@@ -78,7 +78,7 @@ export default class MinoManager {
 
 		// set mino in breakout board
 		if (!breakoutMino && color) {
-			let mino = world.createEntity()
+			let mino = world.createEntity("Breakout Mino")
 			let { graphics: parent } = this.breakoutBoard.getComponent(Sprite)
 			let graphics = new Graphics()
 			graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)

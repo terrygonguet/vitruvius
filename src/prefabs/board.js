@@ -45,6 +45,7 @@ export default function makeBoard(position = "left") {
 	})
 	e.addComponent(Sprite, { graphics: g })
 	e.addComponent(isTetris ? TetrisBoard : BreakoutBoard)
+	e.name = isTetris ? "Tetris Board" : "Breakout Board"
 
 	return e
 }

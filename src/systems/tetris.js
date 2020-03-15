@@ -8,6 +8,7 @@ import makeTetromino from "../prefabs/tetromino.js"
 import { world } from "../globals.js"
 import { Graphics } from "pixi.js"
 import MinoManager from "../utils/minoManager.js"
+import Data from "../components/data.js"
 
 let { cell, width: boardWidth } = getBoardDimensions()
 
@@ -20,6 +21,8 @@ class TetrisSystem extends System {
 	}
 
 	init() {
+		/** @type {ecsy.Entity} */
+		this.tetrisBoard = window.tetrisBoard
 		this.fallSpeed = 1
 		this.time = 0
 		this.spawnTimer = 0.5
@@ -57,8 +60,7 @@ class TetrisSystem extends System {
 			x: "rotateCW",
 			c: "hold",
 		}
-		this.heldEntity = world.createEntity()
-		this.ghost = world.createEntity()
+		this.ghost = world.createEntity("Ghost Tetromino")
 		this.minoManager = new MinoManager()
 
 		document.addEventListener("keydown", e => {
@@ -78,21 +80,11 @@ class TetrisSystem extends System {
 				else this.autorepeat = Infinity
 			}
 		})
-		let graphics = new Graphics()
-		this.heldEntity
-			.addComponent(Sprite, { graphics })
-			.addComponent(Position, {
-				x: innerWidth / 4 + boardWidth / 2 + 2 * cell,
-				y: innerHeight / 4,
-			})
-		this.drawHeld()
 
-		/** @type {ecsy.Entity} */
-		let board = window.tetrisBoard
-		let { graphics: parent } = board.getComponent(Sprite)
-		graphics = new Graphics()
+		let { graphics: ghostParent } = this.tetrisBoard.getComponent(Sprite)
+		let graphics = new Graphics()
 		this.ghost
-			.addComponent(Sprite, { graphics, parent })
+			.addComponent(Sprite, { graphics, parent: ghostParent })
 			.addComponent(Position)
 		matrix.init()
 		this.minoManager.init()
@@ -146,7 +138,6 @@ class TetrisSystem extends System {
 					e.remove()
 					let next = makeTetromino(this.held)
 					this.held = tetromino.tetrimino
-					this.drawHeld()
 					this.drawGhost(next.getComponent(Tetromino))
 					this.time = 0
 					return
@@ -227,6 +218,13 @@ class TetrisSystem extends System {
 				graphics.children.forEach((c, i) =>
 					c.position.set(shape[i].x * cell, shape[i].y * cell),
 				)
+
+				/** @type {ecsy.Entity} */
+				let ghost = e.getComponent(Data).get("ghost")
+				let { graphics: ghostGraphics } = ghost.getComponent(Sprite)
+				ghostGraphics.children.forEach((c, i) =>
+					c.position.set(shape[i].x * cell, shape[i].y * cell),
+				)
 			},
 		)
 
@@ -266,19 +264,6 @@ class TetrisSystem extends System {
 				matrix.setMultiple(temps, rowAbove)
 			}
 			y-- // the rows moved down
-		}
-	}
-
-	drawHeld() {
-		/** @type {{ graphics: PIXI.Graphics }} */
-		let { graphics } = this.heldEntity.getMutableComponent(Sprite)
-		const shape = this.held.shape.get(Direction.North)
-		graphics
-			.clear()
-			.beginFill(this.held.color.hex)
-			.scale.set(1, -1)
-		for (const p of shape) {
-			graphics.drawRect(p.x * cell, p.y * cell, cell, cell)
 		}
 	}
 
