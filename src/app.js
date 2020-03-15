@@ -1,13 +1,11 @@
-import { world, app } from "./globals.js"
-
+import { app, world } from "./globals.js"
+import makeBoard from "./prefabs/board.js"
+import BreakoutSystem from "./systems/breakout.js"
 import CollisionSystem from "./systems/collisions.js"
+import EventSystem from "./systems/events.js"
 import MovementSystem from "./systems/movement.js"
 import RenderableSystem from "./systems/renderable.js"
-import EventSystem from "./systems/events.js"
 import TetrisSystem from "./systems/tetris.js"
-import BreakoutSystem from "./systems/breakout.js"
-
-import makeBoard from "./prefabs/board.js"
 import { matrix } from "./tetris.js"
 
 app.loader

@@ -9,6 +9,7 @@ import Velocity from "../components/velocity.js"
 import { world } from "../globals.js"
 import { clamp, getBoardDimensions } from "../tools.js"
 import EventTarget from "../components/eventTarget.js"
+import TetrisSystem from "./tetris.js"
 
 /**
  * @typedef {import("./collisions.js").CollisionEvent} CollisionEvent
@@ -38,6 +39,8 @@ class BreakoutSystem extends System {
 			s: "action",
 		}
 		this.walls = new Array(4).fill(0).map(_ => world.createEntity())
+		this.ballSpeed = 300
+		this.ballRadius = cell / 5
 
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
@@ -62,10 +65,10 @@ class BreakoutSystem extends System {
 		this.paddle.addComponent(Position, { x: boardWidth / 2, y: cell })
 		this.paddle.addComponent(Hitbox, { value: hitbox, group: Group.paddle })
 
-		const hwall = new SAT.Box(new Position(), boardWidth, 10)
-		const vwall = new SAT.Box(new Position(), 10, boardHeight)
+		const hwall = new SAT.Box(new Position(), boardWidth, cell)
+		const vwall = new SAT.Box(new Position(), cell, boardHeight)
 		this.walls[0]
-			.addComponent(Position, { x: -10, y: 0 })
+			.addComponent(Position, { x: -cell, y: 0 })
 			.addComponent(Hitbox, {
 				value: vwall.toPolygon(),
 				group: Group.verticalWall,
@@ -77,7 +80,7 @@ class BreakoutSystem extends System {
 				group: Group.verticalWall,
 			})
 		this.walls[2]
-			.addComponent(Position)
+			.addComponent(Position, { x: 0, y: -cell })
 			.addComponent(Hitbox, {
 				value: hwall.toPolygon(),
 				group: Group.horizontalWall,
@@ -125,16 +128,19 @@ class BreakoutSystem extends System {
 		const board = this.breakoutBoard
 		const { graphics: parent } = board.getComponent(Sprite)
 		const graphics = new Graphics()
-		const angle = (-Math.PI / 4) * Math.sign(deltaX)
+		const angle = (-Math.PI / 5) * Math.sign(deltaX)
 		const ballPos = position.clone().add({ x: 0, y: cell })
-		const hitbox = new SAT.Circle(ballPos.clone(), cell / 3)
+		const hitbox = new SAT.Circle(ballPos.clone(), this.ballRadius)
 		graphics
 			.beginFill(0xff0000)
 			.lineStyle(1, 0xffffff)
-			.drawCircle(0, 0, cell / 3)
+			.drawCircle(0, 0, this.ballRadius)
 		ball.addComponent(Position, ballPos)
 		ball.addComponent(Sprite, { graphics, parent })
-		ball.addComponent(Velocity, new Velocity(0, 500).rotate(angle))
+		ball.addComponent(
+			Velocity,
+			new Velocity(0, this.ballSpeed).rotate(angle),
+		)
 		ball.addComponent(Ball)
 		ball.addComponent(Hitbox, { value: hitbox, group: Group.ball })
 		ball.addComponent(EventTarget)
@@ -147,18 +153,44 @@ class BreakoutSystem extends System {
 			e => {
 				let { other, response, a } = e.detail
 				let { group } = other.getComponent(Hitbox)
-				let toMove = false
-				if ([Group.horizontalWall, Group.paddle].includes(group)) {
+				if (group == Group.horizontalWall) {
 					ball?.getMutableComponent(Velocity)?.scale(1, -1)
-					toMove = true
 				} else if (group == Group.verticalWall) {
 					ball?.getMutableComponent(Velocity)?.scale(-1, 1)
-					toMove = true
+				} else if (group == Group.mino) {
+					const { x, y } = response.overlapN
+					if (Math.abs(x) > Math.abs(y))
+						ball?.getMutableComponent(Velocity)?.scale(-1, 1)
+					else ball?.getMutableComponent(Velocity)?.scale(1, -1)
+				} else if (group == Group.paddle) {
+					const { x, y } = response.overlapN
+					if (Math.abs(x) > Math.abs(y))
+						ball?.getMutableComponent(Velocity)?.scale(-1, 1)
+					else {
+						let velocity = ball
+							?.getMutableComponent(Velocity)
+							.set(0, this.ballSpeed)
+						let ballpos = ball.getComponent(Position)
+						let paddlepos = this.paddle.getComponent(Position)
+						let delta = (paddlepos.x - ballpos.x) / 50
+						velocity.rotate(delta * 1.22173) // 70°
+					}
 				}
-				if (toMove) {
+
+				if (![Group.none, Group.ball].includes(group)) {
 					let pos = ball?.getMutableComponent(Position)
 					if (ball == a) pos?.sub(response.overlapV)
 					else pos?.add(response.overlapV)
+				}
+
+				if (group == Group.mino) {
+					let { x, y } = other.getComponent(Position)
+					/** @type {TetrisSystem} */
+					let { minoManager } = world.getSystem(TetrisSystem)
+					minoManager.removeMino(
+						Math.round(x / cell),
+						Math.round(y / cell) - minoManager.breakoutOffset,
+					)
 				}
 			},
 		)

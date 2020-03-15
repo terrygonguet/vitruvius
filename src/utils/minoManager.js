@@ -4,6 +4,8 @@ import Sprite from "../components/sprite.js"
 import { world } from "../globals.js"
 import Position from "../components/position.js"
 import { Graphics } from "pixi.js"
+import Hitbox, { Group } from "../components/hitbox.js"
+import SAT from "sat"
 
 const { cell } = getBoardDimensions()
 
@@ -58,6 +60,7 @@ export default class MinoManager {
 	setMinoColor(x, y, color) {
 		let tetrisMino = this.tetrisMinos[y * width + x]
 		let breakoutMino = this.breakoutMinos[y * width + x]
+		// set mino in tetris board
 		if (!tetrisMino && color) {
 			let mino = world.createEntity()
 			let { graphics: parent } = this.tetrisBoard.getComponent(Sprite)
@@ -73,22 +76,37 @@ export default class MinoManager {
 			if (color) graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)
 		}
 
+		// set mino in breakout board
 		if (y < this.breakoutOffset && !breakoutMino && color) {
 			let mino = world.createEntity()
 			let { graphics: parent } = this.breakoutBoard.getComponent(Sprite)
 			let graphics = new Graphics()
 			graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)
+			let hitbox = new SAT.Box(new Position(), cell, cell).toPolygon()
 			mino.addComponent(
 				Position,
 				new Position(x, height - (this.breakoutOffset - y)).scale(cell),
 			)
 			mino.addComponent(Sprite, { graphics, parent })
+			mino.addComponent(Hitbox, { value: hitbox, group: Group.mino })
 			this.breakoutMinos[y * width + x] = mino
 		} else if (breakoutMino) {
 			/** @type {{ graphics:PIXI.Graphics }} */
 			const { graphics } = breakoutMino.getMutableComponent(Sprite)
 			graphics.clear()
-			if (color) graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)
+			if (color) {
+				graphics.beginFill(color.hex).drawRect(0, 0, cell, cell)
+				breakoutMino.getMutableComponent(Hitbox).group = Group.mino
+			} else breakoutMino.getMutableComponent(Hitbox).group = Group.none
 		}
+	}
+
+	/**
+	 * Hides the mino at (x, y)
+	 * @param {number} x
+	 * @param {number} y
+	 */
+	removeMino(x, y) {
+		this.setMinoColor(x, y)
 	}
 }

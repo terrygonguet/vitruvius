@@ -5,7 +5,7 @@ class Hitbox extends Component {
 	value = null
 	group = Group.none
 
-	clear() {
+	reset() {
 		this.value = null
 		this.group = Group.none
 	}
