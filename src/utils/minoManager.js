@@ -77,7 +77,7 @@ export default class MinoManager {
 		}
 
 		// set mino in breakout board
-		if (y < this.breakoutOffset && !breakoutMino && color) {
+		if (!breakoutMino && color) {
 			let mino = world.createEntity()
 			let { graphics: parent } = this.breakoutBoard.getComponent(Sprite)
 			let graphics = new Graphics()

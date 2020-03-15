@@ -16,11 +16,17 @@ export default function makeBoard(position = "left") {
 	let xOffset = (isTetris ? 1 : 3) * (innerWidth / 4)
 	let { width: w, height: h, cell } = getBoardDimensions()
 	let g = new Graphics()
+	let mask = new Graphics()
 
 	// draw the borders
 	g.lineStyle(2, 0xffffff)
 		.drawRect(-1, -1, w + 2, h + 2)
 		.lineStyle(1, 0xffffff, 0.4)
+
+	// set mask
+	mask.beginFill(0xff0000).drawRect(-5, -5, w + 10, h + 10)
+	g.addChild(mask)
+	g.mask = mask
 
 	// inverse Y so (0,0) is bottom left
 	g.scale.y = -1
