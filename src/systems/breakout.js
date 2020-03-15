@@ -1,6 +1,8 @@
 import { System } from "ecsy"
 import { Graphics } from "pixi.js"
 import SAT from "sat"
+import Data from "../components/data.js"
+import EventTarget from "../components/eventTarget.js"
 import Hitbox, { Group } from "../components/hitbox.js"
 import Position from "../components/position.js"
 import Sprite from "../components/sprite.js"
@@ -8,7 +10,6 @@ import { Ball } from "../components/tags.js"
 import Velocity from "../components/velocity.js"
 import { world } from "../globals.js"
 import { clamp, getBoardDimensions } from "../tools.js"
-import EventTarget from "../components/eventTarget.js"
 import TetrisSystem from "./tetris.js"
 
 /**
@@ -26,6 +27,7 @@ class BreakoutSystem extends System {
 
 	init() {
 		this.paddle = world.createEntity()
+		/** @type {ecsy.Entity} */
 		this.breakoutBoard = window.breakoutBoard
 		this.moveSpeed = 400
 		this.keys = {
@@ -50,9 +52,7 @@ class BreakoutSystem extends System {
 			let key = this.keybinds[e.key]
 			if (key) this.keys[key] = false
 		})
-		/** @type {ecsy.Entity} */
-		let board = this.breakoutBoard
-		let { graphics: parent } = board.getComponent(Sprite)
+		let { graphics: parent } = this.breakoutBoard.getComponent(Sprite)
 		let graphics = new Graphics()
 		graphics.beginFill(0xffffff).drawRoundedRect(-50, -10, 100, 20, 12)
 		let hitbox = new SAT.Polygon(new Position(boardWidth / 2, cell), [
@@ -66,7 +66,7 @@ class BreakoutSystem extends System {
 		this.paddle.addComponent(Hitbox, { value: hitbox, group: Group.paddle })
 
 		const hwall = new SAT.Box(new Position(), boardWidth, cell)
-		const vwall = new SAT.Box(new Position(), cell, boardHeight)
+		const vwall = new SAT.Box(new Position(), cell, 2 * boardHeight)
 		this.walls[0]
 			.addComponent(Position, { x: -cell, y: 0 })
 			.addComponent(Hitbox, {
@@ -87,7 +87,7 @@ class BreakoutSystem extends System {
 			})
 			.addComponent(EventTarget)
 		this.walls[3]
-			.addComponent(Position, { y: boardHeight, x: 0 })
+			.addComponent(Position, { y: 2 * boardHeight, x: 0 })
 			.addComponent(Hitbox, {
 				value: hwall.toPolygon(),
 				group: Group.horizontalWall,
@@ -116,7 +116,7 @@ class BreakoutSystem extends System {
 	}
 
 	/**
-	 * Creates a ball above the given paddle position with
+	 * Creates a ball above the given position position with
 	 * an angle if `deltaX != 0`
 	 * @param {Object} options
 	 * @param {Position} options.position
@@ -124,9 +124,10 @@ class BreakoutSystem extends System {
 	 */
 	createBall({ position, deltaX } = {}) {
 		const ball = world.createEntity()
-		/** @type {ecsy.Entity} */
-		const board = this.breakoutBoard
-		const { graphics: parent } = board.getComponent(Sprite)
+		const { graphics: parent } = this.breakoutBoard.getComponent(Sprite)
+		const { graphics: ghostParent } = window.tetrisBoard.getComponent(
+			Sprite,
+		)
 		const graphics = new Graphics()
 		const angle = (-Math.PI / 5) * Math.sign(deltaX)
 		const ballPos = position.clone().add({ x: 0, y: cell })
@@ -135,8 +136,14 @@ class BreakoutSystem extends System {
 			.beginFill(0xff0000)
 			.lineStyle(1, 0xffffff)
 			.drawCircle(0, 0, this.ballRadius)
+		const ghost = world.createEntity()
 		ball.addComponent(Position, ballPos)
+		ghost.addComponent(Position, ballPos.clone())
 		ball.addComponent(Sprite, { graphics, parent })
+		ghost.addComponent(Sprite, {
+			graphics: graphics.clone(),
+			parent: ghostParent,
+		})
 		ball.addComponent(
 			Velocity,
 			new Velocity(0, this.ballSpeed).rotate(angle),
@@ -144,8 +151,35 @@ class BreakoutSystem extends System {
 		ball.addComponent(Ball)
 		ball.addComponent(Hitbox, { value: hitbox, group: Group.ball })
 		ball.addComponent(EventTarget)
+		ball.addComponent(Data, {
+			flip: { vertical: false, horizontal: false },
+			ghost,
+		})
 
 		let evt = ball.getComponent(EventTarget)
+
+		evt.addEventListener("tick", () => {
+			let data = ball.getMutableComponent(Data)
+			/** @type {ecsy.Entity} */
+			let ghost = data.get("ghost")
+			let pos = ball.getComponent(Position)
+			let ghostPos = ghost.getComponent(Position)
+			/** @type {TetrisSystem} */
+			let { minoManager } = world.getSystem(TetrisSystem)
+			ghostPos
+				.copy(pos)
+				.sub({ x: 0, y: minoManager.breakoutOffset * cell })
+
+			let flip = data.get("flip")
+			flip.horizontal = flip.vertical = false
+		})
+
+		evt.addEventListener("removed", () => {
+			console.log(ball)
+			/** @type {ecsy.Entity} */
+			let ghost = ball.getRemovedComponent(Data).get("ghost")
+			ghost.remove()
+		})
 
 		evt.addEventListener(
 			"collide",
@@ -153,20 +187,28 @@ class BreakoutSystem extends System {
 			e => {
 				let { other, response, a } = e.detail
 				let { group } = other.getComponent(Hitbox)
-				if (group == Group.horizontalWall) {
+				let flip = ball.getMutableComponent(Data).get("flip")
+				if (group == Group.horizontalWall && !flip.horizontal) {
 					ball?.getMutableComponent(Velocity)?.scale(1, -1)
-				} else if (group == Group.verticalWall) {
+					flip.horizontal = true
+				} else if (group == Group.verticalWall && !flip.vertical) {
 					ball?.getMutableComponent(Velocity)?.scale(-1, 1)
+					flip.vertical = true
 				} else if (group == Group.mino) {
 					const { x, y } = response.overlapN
-					if (Math.abs(x) > Math.abs(y))
+					if (Math.abs(x) > Math.abs(y) && !flip.vertical) {
 						ball?.getMutableComponent(Velocity)?.scale(-1, 1)
-					else ball?.getMutableComponent(Velocity)?.scale(1, -1)
+						flip.vertical = true
+					} else if (!flip.horizontal) {
+						ball?.getMutableComponent(Velocity)?.scale(1, -1)
+						flip.horizontal = true
+					}
 				} else if (group == Group.paddle) {
 					const { x, y } = response.overlapN
-					if (Math.abs(x) > Math.abs(y))
+					if (Math.abs(x) > Math.abs(y) && !flip.vertical) {
 						ball?.getMutableComponent(Velocity)?.scale(-1, 1)
-					else {
+						flip.vertical = true
+					} else if (!flip.horizontal) {
 						let velocity = ball
 							?.getMutableComponent(Velocity)
 							.set(0, this.ballSpeed)
@@ -174,6 +216,7 @@ class BreakoutSystem extends System {
 						let paddlepos = this.paddle.getComponent(Position)
 						let delta = (paddlepos.x - ballpos.x) / 50
 						velocity.rotate(delta * 1.22173) // 70°
+						flip.horizontal = true
 					}
 				}
 
