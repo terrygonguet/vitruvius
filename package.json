@@ -25,21 +25,21 @@
 	"homepage": "https://github.com/terrygonguet/vitruvius#readme",
 	"dependencies": {
 		"cssnano": "^4.1.10",
-		"ecsy": "^0.2.2",
+		"ecsy": "^0.2.3",
 		"pixi.js": "^5.2.1",
 		"sat": "^0.8.0"
 	},
 	"devDependencies": {
 		"@babel/cli": "^7.8.4",
-		"@babel/core": "^7.8.4",
+		"@babel/core": "^7.8.7",
 		"@babel/plugin-proposal-class-properties": "^7.8.3",
-		"@babel/preset-env": "^7.8.4",
+		"@babel/preset-env": "^7.8.7",
 		"@fullhuman/postcss-purgecss": "^2.1.0",
 		"autoprefixer": "^9.7.4",
-		"cross-env": "^7.0.0",
+		"cross-env": "^7.0.2",
 		"postcss": "^7.0.27",
 		"postcss-cli": "^7.1.0",
-		"snowpack": "^1.4.0",
+		"snowpack": "^1.6.0",
 		"tailwindcss": "^1.2.0"
 	},
 	"browserslist": " >0.75%, not ie 11, not UCAndroid >0, not OperaMini all",
