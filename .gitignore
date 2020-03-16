@@ -3,4 +3,5 @@ dist/**/*.js
 dist/**/*.json
 dist/**/*.css
 dist/**/*.map
+src/ui/*.js
 .vscode

@@ -12,7 +12,7 @@
 		"build:babel": "babel src -d dist",
 		"dev": "run-p -r dev:ui dev:js serve",
 		"dev:js": "babel src -d dist -w",
-		"dev:ui": "nodemon -w ./ui -e svelte buildUI.js",
+		"dev:ui": "nodemon -w ./src/ui -e svelte buildUI.js",
 		"serve": "serve -p 3000 dist"
 	},
 	"repository": {

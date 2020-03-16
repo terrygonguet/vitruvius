@@ -6,7 +6,7 @@ const compiled = []
 async function compile(name = "App") {
 	console.log(`Compiling ${name}.svelte...`)
 
-	const app = await fs.readFile(`ui/${name}.svelte`)
+	const app = await fs.readFile(`src/ui/${name}.svelte`)
 	const { js, warnings, vars } = svelte.compile(app.toString(), {
 		customElement: true,
 		dev: true,
