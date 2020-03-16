@@ -1,4 +1,5 @@
-import { world, start, app } from "./globals.js"
+import { world, start, app, canvas } from "./globals.js"
+import App from "./ui/App.js"
 
 app.loader
 	.on("error", (err, loader, res) => {

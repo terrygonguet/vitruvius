@@ -4,12 +4,15 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"build": "cross-env NODE_ENV=production npm run build:css && npm run build:snowpack && npm run build:babel",
+		"build": "cross-env-shell NODE_ENV=production \"run-s build:**\"",
 		"build:css": "postcss -o dist/css/styles.css src/styles.css ",
 		"build:snowpack": "snowpack --optimize --include \"src/**/*.js\" --dest dist/web_modules",
+		"build:ui": "node buildUI.js",
 		"snowpack": "snowpack --dest dist/web_modules/ --include \"src/**/*.js\"",
 		"build:babel": "babel src -d dist",
-		"dev": "babel src -d dist -w",
+		"dev": "run-p -r dev:ui dev:js serve",
+		"dev:js": "babel src -d dist -w",
+		"dev:ui": "nodemon -w ./ui -e svelte buildUI.js",
 		"serve": "serve -p 3000 dist"
 	},
 	"repository": {
@@ -37,9 +40,12 @@
 		"@fullhuman/postcss-purgecss": "^2.1.0",
 		"autoprefixer": "^9.7.4",
 		"cross-env": "^7.0.2",
+		"nodemon": "^2.0.2",
+		"npm-run-all": "^4.1.5",
 		"postcss": "^7.0.27",
 		"postcss-cli": "^7.1.0",
 		"snowpack": "^1.6.0",
+		"svelte": "^3.20.0",
 		"tailwindcss": "^1.2.0"
 	},
 	"browserslist": " >0.75%, not ie 11, not UCAndroid >0, not OperaMini all",
@@ -47,7 +53,8 @@
 		"webDependencies": [
 			"pixi.js",
 			"ecsy",
-			"sat"
+			"sat",
+			"svelte"
 		]
 	}
 }

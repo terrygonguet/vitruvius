@@ -2,6 +2,8 @@
 	"imports": {
 		"pixi.js": "./pixi.js",
 		"ecsy": "./ecsy.js",
-		"sat": "./sat.js"
+		"sat": "./sat.js",
+		"svelte": "./svelte.js",
+		"svelte/internal": "./svelte/internal.js"
 	}
 }
