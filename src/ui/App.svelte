@@ -1,7 +1,3 @@
-<script>
-	import Title from "./Title.js"
-</script>
-
 <style>
 	main {
 		position: fixed;

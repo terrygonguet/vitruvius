@@ -1,5 +1,7 @@
 import { world, start, app, canvas } from "./globals.js"
-import App from "./ui/App.js"
+import UIFiles from "./ui/files.js"
+
+UIFiles.forEach(f => import(`./ui/${f}.js`))
 
 app.loader
 	.on("error", (err, loader, res) => {
