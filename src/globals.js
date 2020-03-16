@@ -1,5 +1,12 @@
 import { World } from "ecsy"
 import { Application } from "pixi.js"
+import makeBoard from "./prefabs/board.js"
+import BreakoutSystem from "./systems/breakout.js"
+import CollisionSystem from "./systems/collisions.js"
+import EventSystem from "./systems/events.js"
+import MovementSystem from "./systems/movement.js"
+import RenderableSystem from "./systems/renderable.js"
+import TetrisSystem from "./systems/tetris.js"
 
 export const canvas = document.querySelector("#canvas")
 
@@ -15,3 +22,32 @@ export const stage = app.stage
 export const ticker = app.ticker
 
 export const world = new World()
+
+export function start() {
+	window.tetrisBoard = makeBoard("left")
+	window.breakoutBoard = makeBoard("right")
+
+	world
+		.registerSystem(TetrisSystem)
+		.registerSystem(BreakoutSystem)
+		.registerSystem(MovementSystem)
+		.registerSystem(CollisionSystem)
+		.registerSystem(RenderableSystem)
+		.registerSystem(EventSystem)
+
+	let prev = performance.now(),
+		now,
+		delta
+	requestAnimationFrame(function raf(time) {
+		now = performance.now()
+		delta = now - prev
+		prev = now
+		if (world.enabled) {
+			world.execute(delta / 1000, time)
+			app.render()
+		}
+		requestAnimationFrame(raf)
+	})
+
+	console.log(world, app)
+}
