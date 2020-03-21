@@ -27,9 +27,17 @@ export const world = new World()
 export const bus = new EventTarget()
 
 export function start() {
+	world.entityManager.removeAllEntities()
+	// HACK: run one tick to clear resources
+	world.enabled = true
+	world.execute(Number.MIN_VALUE)
+	stage.removeChildren()
+
 	window.tetrisBoard = makeTetrisBoard()
 	window.breakoutBoard = makeBreakoutBoard()
 
+	// HACK
+	world.systemManager = new world.systemManager.constructor(world)
 	world
 		.registerSystem(TetrisSystem)
 		.registerSystem(BreakoutSystem)
@@ -41,16 +49,18 @@ export function start() {
 	let prev = performance.now(),
 		now,
 		delta
-	requestAnimationFrame(function raf(time) {
-		now = performance.now()
-		delta = now - prev
-		prev = now
-		if (world.enabled) {
-			world.execute(delta / 1000, time)
-			app.render()
-		}
-		requestAnimationFrame(raf)
-	})
+	window.rafID =
+		window.rafID ||
+		requestAnimationFrame(function raf(time) {
+			now = performance.now()
+			delta = now - prev
+			prev = now
+			if (world.enabled) {
+				world.execute(delta / 1000, time)
+				app.render()
+			}
+			window.rafID = requestAnimationFrame(raf)
+		})
 
 	console.log(world, app)
 }

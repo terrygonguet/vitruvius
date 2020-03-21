@@ -38,10 +38,11 @@ class RenderableSystem extends System {
 		this.queries.spriteRemoved.results.forEach(
 			/** @param {ecsy.Entity} e */
 			e => {
-				let { graphics } =
+				let { graphics, parent } =
 					e.getComponent(DisplayObject) ||
 					e.getRemovedComponent(DisplayObject)
-				graphics.destroy({ children: true })
+				if (parent) parent.removeChild(graphics)
+				else graphics.destroy({ children: true })
 				e.removeComponent(DisplayObject)
 			},
 		)

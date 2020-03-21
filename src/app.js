@@ -1,4 +1,4 @@
-import { world, start, app, canvas } from "./globals.js"
+import { world, start, app, canvas, bus } from "./globals.js"
 import App from "./ui/App.svelte.js"
 
 app.loader
@@ -11,6 +11,7 @@ app.loader
 				world.enabled = !world.enabled
 			}
 		})
+		bus.addEventListener("gameover", () => (world.enabled = false))
 
 		const ui = new App({
 			target: document.querySelector("#app"),

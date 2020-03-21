@@ -101,7 +101,15 @@ class TetrisSystem extends System {
 			this.spawnTimer -= delta
 			if (this.spawnTimer <= 0) {
 				let next = makeTetromino(this.queue.next())
-				this.drawGhost(next.getComponent(Tetromino))
+				if (
+					matrix
+						.queryTetromino(next.getComponent(Tetromino))
+						.filter(Boolean).length
+				)
+					bus.dispatchEvent(
+						new CustomEvent("gameover", { detail: "Block Out" }),
+					)
+				else this.drawGhost(next.getComponent(Tetromino))
 			}
 		}
 
@@ -247,6 +255,10 @@ class TetrisSystem extends System {
 		let shape = tetrimino.shape
 			.get(direction)
 			.map(p => p.clone().add(position))
+		if (shape.every(p => p.y >= 20))
+			bus.dispatchEvent(
+				new CustomEvent("gameover", { detail: "Lock Out" }),
+			)
 		matrix.setMultiple(shape, tetrimino.color)
 		e.remove()
 		this.spawnTimer = 0.2

@@ -40,7 +40,7 @@
 </style>
 
 <section
-	class="absolute-center transform-center transform h-full flex flex-col justify-start items-center mt-32"
+	class="absolute-center transform-center transform flex flex-col justify-start items-center"
 	in:fade={{ delay: 200, duration: 200 }}
 	out:fade={{ duration: 200 }}>
 	<p class="text-center text-xl">HELD</p>

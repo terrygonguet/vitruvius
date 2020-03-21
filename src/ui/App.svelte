@@ -2,12 +2,15 @@
 	import Menu from "./Menu.svelte.js"
 	import Controls from "./Controls.svelte.js"
 	import Game from "./Game.svelte.js"
-	import { createEventDispatcher } from "svelte";
+	import GameOver from "./GameOver.svelte.js"
+	import { createEventDispatcher, onMount } from "svelte";
+	import { bus } from "../globals.js"
 
 	const emit = createEventDispatcher()
 
 	let state = "menu",
-		countdown = 3
+		countdown = 3,
+		gameover
 
 	function start() {
 		state = "game"
@@ -22,6 +25,13 @@
 		// 	} else setTimeout(cb, 1000)
 		// }, 1000)
 	}
+
+	onMount(() => {
+		bus.addEventListener("gameover", ({ detail }) => {
+			gameover = detail
+			state = "gameover"
+		})
+	})
 </script>
 
 <style>
@@ -50,5 +60,7 @@
 		</h1>
 	{:else if state == "game"}
 		<Game />
+	{:else if state == "gameover"}
+		<GameOver reason={gameover} on:tryagain={start} />
 	{/if}
 </main>

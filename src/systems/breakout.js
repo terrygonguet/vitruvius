@@ -107,10 +107,14 @@ class BreakoutSystem extends System {
 	}
 
 	execute(delta, time) {
-		const position = this.paddle.getMutableComponent(Position)
-		const deltaX =
-			(this.keys.moveLeft - this.keys.moveRight) * this.moveSpeed * delta
-		position.x = clamp(position.x + deltaX, 50, boardWidth - 50)
+		if (this.paddle.alive) {
+			const position = this.paddle.getMutableComponent(Position)
+			const deltaX =
+				(this.keys.moveLeft - this.keys.moveRight) *
+				this.moveSpeed *
+				delta
+			position.x = clamp(position.x + deltaX, 50, boardWidth - 50)
+		}
 
 		const ballExists = !!this.queries.balls.results.length
 		if (!ballExists && this.keys.action) {
