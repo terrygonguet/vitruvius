@@ -12,6 +12,7 @@ import { world } from "../globals.js"
 import { clamp, getBoardDimensions } from "../tools.js"
 import TetrisSystem from "./tetris.js"
 import makeBall from "../prefabs/ball.js"
+import { matrix, height } from "../tetris.js"
 
 /**
  * @typedef {import("./collisions.js").CollisionEvent} CollisionEvent
@@ -101,18 +102,19 @@ class BreakoutSystem extends System {
 			e => {
 				let { other } = e.detail
 				let { group } = other.getComponent(Hitbox)
-				if (group == Group.ball) other.remove()
+				if (group == Group.ball) {
+					other.remove()
+					matrix.addJunkLine(0)
+				}
 			},
 		)
 	}
 
 	execute(delta, time) {
+		const deltaX =
+			(this.keys.moveLeft - this.keys.moveRight) * this.moveSpeed * delta
 		if (this.paddle.alive) {
 			const position = this.paddle.getMutableComponent(Position)
-			const deltaX =
-				(this.keys.moveLeft - this.keys.moveRight) *
-				this.moveSpeed *
-				delta
 			position.x = clamp(position.x + deltaX, 50, boardWidth - 50)
 		}
 

@@ -185,7 +185,7 @@ class Matrix {
 			y = posOrX.y
 			color = colorOrY
 		}
-		this.cells[y * width + y] = color
+		this.cells[y * width + x] = color
 		this._dispatchOne(x, y)
 		return color
 	}
@@ -206,6 +206,18 @@ class Matrix {
 				: colors
 		}
 		for (const p of positions) this._dispatchOne(p.x, p.y)
+	}
+
+	/**
+	 * Inserts a junk line in the specified row and moves up every row above
+	 * @param {number} y The row where to insert
+	 */
+	addJunkLine(y) {
+		let line = new Array(width).fill(Color.Gray)
+		line[Math.floor(Math.random() * width)] = undefined
+		this.cells.splice(y * width, 0, ...line)
+		this.cells.length = width * bufferHeight
+		this._dispatchAll()
 	}
 
 	/**

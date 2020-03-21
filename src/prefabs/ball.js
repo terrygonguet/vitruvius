@@ -10,6 +10,7 @@ import Hitbox, { Group } from "../components/hitbox.js"
 import EventTarget from "../components/eventTarget.js"
 import Data from "../components/data.js"
 import TetrisSystem from "../systems/tetris.js"
+import { matrix } from "../tetris.js"
 
 /**
  * Creates a ball above the given paddle position with
@@ -127,7 +128,7 @@ export default function makeBall({
 				let { x, y } = other.getComponent(Position)
 				/** @type {TetrisSystem} */
 				let { minoManager } = world.getSystem(TetrisSystem)
-				minoManager.removeMino(
+				matrix.set(
 					Math.round(x / cell),
 					Math.round(y / cell) - minoManager.breakoutOffset,
 				)
