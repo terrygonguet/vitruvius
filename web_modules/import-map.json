@@ -1,9 +1,10 @@
 {
 	"imports": {
-		"pixi.js": "./pixi.js",
 		"ecsy": "./ecsy.js",
+		"pixi.js": "./pixi.js",
 		"sat": "./sat.js",
 		"svelte": "./svelte.js",
-		"svelte/internal": "./svelte/internal.js"
+		"svelte/internal": "./svelte/internal.js",
+		"svelte/transition": "./svelte/transition.js"
 	}
 }
