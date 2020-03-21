@@ -5,7 +5,7 @@ import Position from "../components/position.js"
 import { getBoardDimensions, range } from "../tools.js"
 import { matrix, width, NextQueue, bufferHeight, Direction } from "../tetris.js"
 import makeTetromino from "../prefabs/tetromino.js"
-import { world } from "../globals.js"
+import { world, bus } from "../globals.js"
 import { Graphics } from "pixi.js"
 import MinoManager from "../utils/minoManager.js"
 import Data from "../components/data.js"
@@ -140,6 +140,11 @@ class TetrisSystem extends System {
 					this.held = tetromino.tetrimino
 					this.drawGhost(next.getComponent(Tetromino))
 					this.time = 0
+					bus.dispatchEvent(
+						new CustomEvent("tetrisheldchange", {
+							detail: { held: this.held },
+						}),
+					)
 					return
 				}
 

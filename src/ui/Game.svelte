@@ -1,7 +1,7 @@
 <script>
 	import { createEventDispatcher, onMount } from "svelte"
 	import { fade } from "svelte/transition"
-	import { world } from "../globals.js"
+	import { world, bus } from "../globals.js"
 	import TetrisSystem from "../systems/tetris.js"
 	import { _ } from "../tools.js"
 
@@ -12,12 +12,24 @@
 
 	onMount(() => {
 		system = world.getSystem(TetrisSystem)
-
-		// HACK
-		setInterval(() => {
-			held = system.held.name
-			queue = system.queue.tetriminos.map(_("name")).filter((n, i) => i < 5)
-		}, 50);
+		held = system.held.name
+		queue =
+			system.queue.tetriminos
+				.map(_("name"))
+				.filter((n, i) => i < 5)
+		bus.addEventListener(
+			"tetrisqueuechange",
+			({ detail }) => {
+				queue =
+					detail.queue.tetriminos
+						.map(_("name"))
+						.filter((n, i) => i < 5)
+			}
+		)
+		bus.addEventListener(
+			"tetrisheldchange",
+			({ detail }) => (held = detail.held.name)
+		)
 	})
 </script>
 

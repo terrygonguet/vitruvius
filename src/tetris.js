@@ -1,6 +1,7 @@
 import Position from "./components/position.js"
 import { range } from "./tools.js"
 import Tetromino from "./components/tetromino.js"
+import { bus } from "./globals.js"
 
 export const width = 10
 export const height = 20
@@ -465,6 +466,9 @@ export class NextQueue {
 		do {
 			this.tetriminos.push(this.bag.next())
 		} while (this.tetriminos.length < this.size)
+		bus.dispatchEvent(
+			new CustomEvent("tetrisqueuechange", { detail: { queue: this } }),
+		)
 	}
 
 	next() {

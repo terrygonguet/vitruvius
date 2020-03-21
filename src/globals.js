@@ -24,6 +24,8 @@ export const ticker = app.ticker
 
 export const world = new World()
 
+export const bus = new EventTarget()
+
 export function start() {
 	window.tetrisBoard = makeTetrisBoard("left")
 	window.breakoutBoard = makeBreakoutBoard("right")
