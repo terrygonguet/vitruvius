@@ -37,14 +37,6 @@ export default function makeBreakoutBoard() {
 	// inverse Y so (0,0) is bottom left
 	g.scale.y = -1
 
-	// draw grid
-	for (const i of range(1, 9)) {
-		g.moveTo(i * cell, 0).lineTo(i * cell, h)
-	}
-	for (const j of range(1, 19)) {
-		g.moveTo(0, j * cell).lineTo(w, j * cell)
-	}
-
 	e.addComponent(Position, {
 		x: xOffset - w / 2,
 		y: innerHeight / 2 + w,
