@@ -10,15 +10,17 @@
 		countdown = 3
 
 	function start() {
-		state = "countdown"
-		countdown = 3
-		setTimeout(function cb() {
-			countdown--
-			if (countdown <= 0) {
-				state = "game"
-				emit("start")
-			} else setTimeout(cb, 1000)
-		}, 1000)
+		state = "game"
+		emit("start")
+		// state = "countdown"
+		// countdown = 3
+		// setTimeout(function cb() {
+		// 	countdown--
+		// 	if (countdown <= 0) {
+		// 		state = "game"
+		// 		emit("start")
+		// 	} else setTimeout(cb, 1000)
+		// }, 1000)
 	}
 </script>
 
