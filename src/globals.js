@@ -1,6 +1,7 @@
 import { World } from "ecsy"
 import { Application } from "pixi.js"
-import makeBoard from "./prefabs/board.js"
+import makeBreakoutBoard from "./prefabs/breakoutBoard.js"
+import makeTetrisBoard from "./prefabs/tetrisBoard.js"
 import BreakoutSystem from "./systems/breakout.js"
 import CollisionSystem from "./systems/collisions.js"
 import EventSystem from "./systems/events.js"
@@ -24,8 +25,8 @@ export const ticker = app.ticker
 export const world = new World()
 
 export function start() {
-	window.tetrisBoard = makeBoard("left")
-	window.breakoutBoard = makeBoard("right")
+	window.tetrisBoard = makeTetrisBoard("left")
+	window.breakoutBoard = makeBreakoutBoard("right")
 
 	world
 		.registerSystem(TetrisSystem)

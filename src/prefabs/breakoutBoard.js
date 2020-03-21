@@ -3,24 +3,30 @@ import { world } from "../globals.js"
 import { range, getBoardDimensions } from "../tools.js"
 import Position from "../components/position.js"
 import Sprite from "../components/sprite.js"
-import { TetrisBoard, BreakoutBoard } from "../components/tags.js"
+import { BreakoutBoard } from "../components/tags.js"
 
 /**
- * @param {"left" | "right"} position
  * @returns {ecsy.Entity}
  */
-export default function makeBoard(position = "left") {
+export default function makeBreakoutBoard() {
 	let e = world.createEntity()
-	let isTetris = position == "left"
-	let isBreakout = !isTetris
-	let xOffset = (isTetris ? 1 : 3) * (innerWidth / 4)
+	let xOffset = 3 * (innerWidth / 4)
 	let { width: w, height: h, cell } = getBoardDimensions()
 	let g = new Graphics()
 	let mask = new Graphics()
 
 	// draw the borders
 	g.lineStyle(2, 0xffffff)
-		.drawRect(-1, -1, w + 2, h + 2)
+		.moveTo(-1, -1)
+		.lineTo(-1, h + 1)
+		.moveTo(w + 1, -1)
+		.lineTo(w + 1, h + 1)
+		.lineStyle(2, 0x00ffff)
+		.moveTo(-1, h + 1)
+		.lineTo(w + 1, h + 1)
+		.lineStyle(2, 0xff00000)
+		.moveTo(-1, -1)
+		.lineTo(w + 1, -1)
 		.lineStyle(1, 0xffffff, 0.4)
 
 	// set mask
@@ -44,8 +50,8 @@ export default function makeBoard(position = "left") {
 		y: innerHeight / 2 + w,
 	})
 	e.addComponent(Sprite, { graphics: g })
-	e.addComponent(isTetris ? TetrisBoard : BreakoutBoard)
-	e.name = isTetris ? "Tetris Board" : "Breakout Board"
+	e.addComponent(BreakoutBoard)
+	e.name = "Breakout Board"
 
 	return e
 }
