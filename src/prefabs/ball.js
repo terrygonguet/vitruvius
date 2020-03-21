@@ -1,4 +1,4 @@
-import { world } from "../globals.js"
+import { world, bus } from "../globals.js"
 import Sprite from "../components/sprite.js"
 import { Graphics } from "pixi.js"
 import { getBoardDimensions } from "../tools.js"
@@ -10,7 +10,7 @@ import Hitbox, { Group } from "../components/hitbox.js"
 import EventTarget from "../components/eventTarget.js"
 import Data from "../components/data.js"
 import TetrisSystem from "../systems/tetris.js"
-import { matrix } from "../tetris.js"
+import { matrix, height } from "../tetris.js"
 
 /**
  * Creates a ball above the given paddle position with
@@ -36,10 +36,7 @@ export default function makeBall({
 	const position = paddle.getComponent(Position)
 	const ballPos = position.clone().add({ x: 0, y: cell })
 	const hitbox = new SAT.Circle(ballPos.clone(), ballRadius)
-	graphics
-		.beginFill(0xff0000)
-		.lineStyle(1, 0xffffff)
-		.drawCircle(0, 0, ballRadius)
+	graphics.beginFill(0xffff00).drawCircle(0, 0, ballRadius)
 	const ghost = world.createEntity("Ghost Ball")
 	ball.addComponent(Position, ballPos)
 	ghost.addComponent(Position, ballPos.clone())
@@ -71,6 +68,11 @@ export default function makeBall({
 
 		let flip = data.get("flip")
 		flip.horizontal = flip.vertical = false
+
+		if (ghostPos.y > height * cell + 50)
+			bus.dispatchEvent(
+				new CustomEvent("gameover", { detail: "You won!" }),
+			)
 	})
 
 	evt.addEventListener("removed", () => {
