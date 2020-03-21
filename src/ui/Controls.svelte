@@ -86,6 +86,6 @@
 		</div>
 	</div>
 	<div class="flex justify-center my-4">
-		<Button on:click={() => emit("back")}>Back</Button>
+		<Button on:click={() => emit("start")}>START</Button>
 	</div>
 </section>

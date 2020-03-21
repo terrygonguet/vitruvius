@@ -53,7 +53,7 @@
 	{#if state == "menu"}
 		<Menu on:start={start} on:teachme={() => (state = "controls")}/>
 	{:else if state == "controls"}
-		<Controls on:back={() => (state = "menu")} />
+		<Controls on:start={start} />
 	{:else if state == "countdown"}
 		<h1 class="text-6xl font-bold font-mono absolute-center transform-center transform countdown">
 			{countdown}
