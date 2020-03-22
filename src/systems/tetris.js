@@ -88,6 +88,9 @@ class TetrisSystem extends System {
 			.addComponent(Position)
 		matrix.init()
 		this.minoManager.init()
+
+		bus.addEventListener("breakblock", () => (this.fallSpeed *= 0.995))
+		bus.addEventListener("breakline", () => (this.fallSpeed *= 0.98))
 	}
 
 	execute(delta, time) {
@@ -271,6 +274,7 @@ class TetrisSystem extends System {
 		for (let y = 0; y < bufferHeight; y++) {
 			let query = matrix.queryLine(y).filter(Boolean)
 			if (query.length != 10) continue
+			bus.dispatchEvent(new CustomEvent("breakline"))
 			// drop all blocks above by one line
 			let temps = Array.from(range(0, width - 1)).map(
 				x => new Position(x, 0),

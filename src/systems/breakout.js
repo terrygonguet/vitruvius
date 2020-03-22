@@ -8,7 +8,7 @@ import Position from "../components/position.js"
 import Sprite from "../components/sprite.js"
 import { Ball } from "../components/tags.js"
 import Velocity from "../components/velocity.js"
-import { world } from "../globals.js"
+import { world, bus } from "../globals.js"
 import { clamp, getBoardDimensions } from "../tools.js"
 import TetrisSystem from "./tetris.js"
 import makeBall from "../prefabs/ball.js"
@@ -48,6 +48,8 @@ class BreakoutSystem extends System {
 		this.ballSpeed = 300
 		this.ballRadius = cell / 5
 
+		bus.addEventListener("breakblock", () => (this.ballSpeed *= 1.005))
+		bus.addEventListener("breakline", () => (this.ballSpeed *= 1.02))
 		document.addEventListener("keydown", e => {
 			let key = this.keybinds[e.key]
 			if (key) this.keys[key] = true
@@ -121,6 +123,14 @@ class BreakoutSystem extends System {
 		const ballExists = !!this.queries.balls.results.length
 		if (!ballExists && this.keys.action) {
 			makeBall({ ...this, deltaX })
+		} else {
+			this.queries.balls.results.forEach(
+				/** @param {ecsy.Entity} */
+				e => {
+					let velocity = e.getMutableComponent(Velocity)
+					velocity.normalize().scale(this.ballSpeed)
+				},
+			)
 		}
 	}
 }

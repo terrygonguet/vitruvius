@@ -134,6 +134,7 @@ export default function makeBall({
 					Math.round(x / cell),
 					Math.round(y / cell) - minoManager.breakoutOffset,
 				)
+				bus.dispatchEvent(new CustomEvent("breakblock"))
 			}
 		},
 	)
